@@ -1,19 +1,41 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import CommonView from '@/views/common/CommonView.vue'
-import StoryBookView from '@/views/storybook/StroyBookView.vue'
-import PlanView from '@/views/plan/PlanView.vue'
-import AttractionMain from '@/views/attraction/AttractionView.vue'
-import MemberView from '@/views/member/MemberView.vue'
+import LandingView from '@/views/common/TheLanding.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/', name: 'home', component: CommonView },
-    { path: '/storybook', name: 'storybook', component: StoryBookView },
-    { path: '/recommendations', name: 'recommendations', component: PlanView },
-    { path: '/categories', name: 'categories', component: AttractionMain },
-    { path: '/member', name: 'member', component: MemberView },
-  ],
+    {
+      path: '/',
+      name: 'landing',
+      component: LandingView
+    },
+    {
+      path: '/login',
+      name: 'login',
+      // lazy-loading: 처음부터 로딩하지 않고 필요할 때 로딩 (성능 최적화)
+      component: () => import('@/views/common/TheLanding.vue')
+    },
+    // {
+    //   path: '/signup',
+    //   name: 'signup',
+    //   component: () => import('@/views/auth/SignupView.vue')
+    // },
+    {
+      path: '/main',
+      name: 'main',
+      component: () => import('@/views/common/TheMain.vue')
+    },
+    {
+      path: '/storybook/create',
+      name: 'storybook-create',
+      component: () => import('@/views/storybook/StoryBookCreate.vue')
+    },
+    {
+      path: '/attraction/recommend',
+      name: 'attraction-recommend',
+      component: () => import('@/views/attraction/AttractionRecommend.vue')
+    }
+  ]
 })
 
 export default router
