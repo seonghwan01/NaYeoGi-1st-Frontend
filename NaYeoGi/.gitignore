@@ -36,3 +36,4 @@ coverage
 __screenshots__/
 
 /node_modules
+AGENTS.md
