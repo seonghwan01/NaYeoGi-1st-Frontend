@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import LandingView from '@/views/common/TheLanding.vue'
+import LandingView from '@/views/common/TheLandingView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -12,8 +12,7 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      // lazy-loading: 처음부터 로딩하지 않고 필요할 때 로딩 (성능 최적화)
-      component: () => import('@/views/common/TheLanding.vue')
+      component: () => import('@/views/common/TheLandingView.vue')
     },
     // {
     //   path: '/signup',
@@ -23,17 +22,17 @@ const router = createRouter({
     {
       path: '/main',
       name: 'main',
-      component: () => import('@/views/common/TheMain.vue')
+      component: () => import('@/views/common/TheMainView.vue')
     },
     {
       path: '/storybook/create',
       name: 'storybook-create',
-      component: () => import('@/views/storybook/StoryBookCreate.vue')
+      component: () => import('@/views/storybook/StoryBookCreateView.vue')
     },
     {
       path: '/attraction/recommend',
       name: 'attraction-recommend',
-      component: () => import('@/views/attraction/AttractionRecommend.vue')
+      component: () => import('@/views/attraction/AttractionSurveyView.vue')
     }
   ]
 })

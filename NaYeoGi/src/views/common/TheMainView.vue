@@ -6,7 +6,7 @@ const router = useRouter();
 // 임시 이미지 URL
 const IMG_BOOK = "https://images.unsplash.com/photo-1544716278-ca83adf3663c?auto=format&fit=crop&w=800&q=80";
 const IMG_MAP = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80";
-const CATEGORIES = ['국내 여행', '해외 여행', '캠핑/글램핑', '호캉스', '신혼여행', '우정여행', '맛집투어', '힐링'];
+const CATEGORIES = ['contenttypes', '에 들어갈', 'kmeans로','분류된 관광지', '카테고리'];
 
 // 페이지 이동 함수
 const goStorybook = () => router.push('/storybook/create'); // 추후 생성 필요
@@ -15,10 +15,10 @@ const goRecommend = () => router.push('/attraction/recommend'); // 추후 생성
 
 <template>
   <div class="container my-5">
-    
+
     <!-- 상단 2분할 카드 -->
     <div class="row g-4" style="height: 500px;">
-      
+
       <!-- 1. AI 스토리북 만들기 -->
       <div class="col-md-6">
         <div @click="goStorybook" class="card text-white h-100 overflow-hidden shadow-lg">

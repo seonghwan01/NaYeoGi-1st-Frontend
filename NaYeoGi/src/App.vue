@@ -9,7 +9,7 @@ import TheHeader from '@/components/common/TheHeader.vue'
     <!-- 1. 헤더: 모든 페이지에 공통으로 떠있습니다. -->
     <TheHeader />
 
-    <!-- 2. 라우터 뷰: URL에 따라 TheLanding.vue 또는 TheMain.vue로 바뀝니다. -->
+    <!-- 2. 라우터 뷰: URL에 따라 TheLandingView.vue 또는 TheMainView.vue로 바뀝니다. -->
     <main class="container mt-5 pt-4">
       <RouterView />
     </main>
