@@ -1,3 +1,6 @@
+const KAKAO_APP_KEY = 'f86da0bef8df692b59dbec85eb51b4f4'
+const MAP_SCRIPT_ID = 'kakao-map-sdk'
+
 export async function requestSurveyOptions() {
   const response = await fetch(`/api/v1/surveys`)
 
@@ -20,6 +23,29 @@ export async function requestAttractionRecommendation(requestBody) {
   if (!response.ok) {
     throw new Error('추천 요청에 실패했습니다')
   }
-  console.log(requestBody)
   return response.json()
+}
+
+export const loadKakaoMaps = () => {
+  return new Promise((resolve, reject) => {
+    if (window.kakao?.maps) {
+      resolve(window.kakao)
+      return
+    }
+
+    const existing = document.getElementById(MAP_SCRIPT_ID)
+    if (existing) {
+      existing.addEventListener('load', () => window.kakao.maps.load(() => resolve(window.kakao)), { once: true })
+      existing.addEventListener('error', (err) => reject(err), { once: true })
+      return
+    }
+
+    const script = document.createElement('script')
+    script.id = MAP_SCRIPT_ID
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey=${KAKAO_APP_KEY}`
+    script.async = true
+    script.onload = () => window.kakao.maps.load(() => resolve(window.kakao))
+    script.onerror = (err) => reject(err)
+    document.head.appendChild(script)
+  })
 }

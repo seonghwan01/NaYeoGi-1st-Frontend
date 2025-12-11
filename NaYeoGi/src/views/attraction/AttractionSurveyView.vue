@@ -47,7 +47,10 @@
     </main>
 
     <footer class="footer">
-      <button type="button" class="next-btn" @click="recommendAttraction">설문 제출</button>
+      <button type="button" class="next-btn" :disabled="isRecommending" @click="handleSubmit">
+        {{ isRecommending ? '추천 준비 중...' : '설문 제출' }}
+      </button>
+      <p v-if="recommendationError" class="submit-error">{{ recommendationError }}</p>
     </footer>
   </div>
 </template>
@@ -55,11 +58,28 @@
 <script setup>
 import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useRouter } from 'vue-router'
 import { useAttractionStore } from '@/stores/attractions'
 
+const router = useRouter()
 const attractionStore = useAttractionStore()
-const { regions, topics, topicError, selectedRegion, selectedTopics } = storeToRefs(attractionStore)
+const { regions, topics, topicError, selectedRegion, selectedTopics, isRecommending, recommendationError } =
+  storeToRefs(attractionStore)
 const { loadTopics, selectRegion, toggleTopic, recommendAttraction } = attractionStore
+
+const handleSubmit = async () => {
+  if (isRecommending.value) return
+  if (!selectedRegion.value || selectedTopics.value.length === 0) {
+    return
+  }
+  try {
+    await recommendAttraction()
+    router.push({ name: 'attraction-select' })
+  } catch (error) {
+    console.log('AttractionSelectView호출 중 오류')
+    console.log(error)
+  }
+}
 
 onMounted(() => {loadTopics() })
 </script>
@@ -204,12 +224,26 @@ onMounted(() => {loadTopics() })
   transition: transform 0.1s ease;
 }
 
+.next-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .next-btn:hover {
   transform: translateY(-1px);
 }
 
 .next-btn:active {
   transform: translateY(0);
+}
+
+.submit-error {
+  margin: 10px auto 0;
+  max-width: 960px;
+  color: #b91c1c;
+  font-size: 14px;
+  text-align: center;
 }
 
 @media (max-width: 640px) {

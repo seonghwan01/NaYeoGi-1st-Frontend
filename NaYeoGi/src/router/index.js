@@ -33,6 +33,11 @@ const router = createRouter({
       path: '/attraction/recommend',
       name: 'attraction-recommend',
       component: () => import('@/views/attraction/AttractionSurveyView.vue')
+    },
+    {
+      path: '/attraction/select',
+      name: 'attraction-select',
+      component: () => import('@/views/attraction/AttractionSelectView.vue')
     }
   ]
 })
