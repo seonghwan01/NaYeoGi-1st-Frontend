@@ -7,39 +7,39 @@ const router = createRouter({
     {
       path: '/',
       name: 'landing',
-      component: LandingView
+      component: LandingView,
     },
     {
       path: '/login',
       name: 'login',
-      component: () => import('@/views/common/TheLandingView.vue')
+      component: () => import('@/views/common/TheLandingView.vue'),
     },
-    // {
-    //   path: '/signup',
-    //   name: 'signup',
-    //   component: () => import('@/views/auth/SignupView.vue')
-    // },
+    {
+      path: '/signup',
+      name: 'signup',
+      component: () => import('@/views/member/MemberJoinView.vue'),
+    },
     {
       path: '/main',
       name: 'main',
-      component: () => import('@/views/common/TheMainView.vue')
+      component: () => import('@/views/common/TheMainView.vue'),
     },
     {
       path: '/storybook/create',
       name: 'storybook-create',
-      component: () => import('@/views/storybook/StoryBookCreateView.vue')
+      component: () => import('@/views/storybook/StoryBookCreateView.vue'),
     },
     {
       path: '/attraction/recommend',
       name: 'attraction-recommend',
-      component: () => import('@/views/attraction/AttractionSurveyView.vue')
+      component: () => import('@/views/attraction/AttractionSurveyView.vue'),
     },
     {
       path: '/attraction/select',
       name: 'attraction-select',
-      component: () => import('@/views/attraction/AttractionSelectView.vue')
-    }
-  ]
+      component: () => import('@/views/attraction/AttractionSelectView.vue'),
+    },
+  ],
 })
 
 export default router

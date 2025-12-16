@@ -1,14 +1,31 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+// [추가 1] Pinia Store 연결
+import { useMemberStore } from '@/stores/members'
+import { storeToRefs } from 'pinia'
 
 const route = useRoute()
 const router = useRouter()
+const memberStore = useMemberStore()
 
-// 현재 페이지 이름이 'landing'이면 true (투명 헤더 적용용)
+// [추가 2] 반응형으로 로그인 상태와 내 정보 가져오기
+const { isLogin, userInfo } = storeToRefs(memberStore)
+
+// 디자인용: 현재 페이지가 'landing'이면 true (투명/검정 배경 적용용)
 const isLanding = computed(() => route.name === 'landing')
 
-// 페이지 이동 함수
+// [수정] 로그인 버튼 클릭 시: 랜딩페이지로 가면서 로그인 창 열기
+const goLogin = () => {
+  router.push({ name: 'landing', query: { login: 'true' } })
+}
+
+// [수정] 로그아웃 클릭 시: Store의 로그아웃 함수 실행
+const goLogout = () => {
+  memberStore.userLogout()
+}
+
+// 일반 페이지 이동
 const navigate = (path) => {
   router.push(path)
 }
@@ -20,54 +37,47 @@ const navigate = (path) => {
       'navbar',
       'navbar-expand-lg',
       'fixed-top',
-      isLanding ? 'navbar-dark bg-dark' : 'navbar-light bg-light shadow-sm'
+      // 디자인은 기존 로직 유지 (랜딩에선 어둡게, 그 외엔 밝게)
+      isLanding ? 'navbar-dark bg-dark bg-opacity-75' : 'navbar-light bg-light shadow-sm',
     ]"
+    style="transition: all 0.3s ease-in-out"
   >
     <div class="container-fluid">
-      <!-- 1. 로고 영역 -->
-      <a class="navbar-brand" href="#" @click.prevent="navigate('/')">
-        나여기
+      <a class="navbar-brand fw-bold" href="#" @click.prevent="navigate(isLogin ? '/main' : '/')">
+        ✈️ 나여기
       </a>
+
       <button
         class="navbar-toggler"
         type="button"
         data-bs-toggle="collapse"
         data-bs-target="#navbarNav"
-        aria-controls="navbarNav"
-        aria-expanded="false"
-        aria-label="Toggle navigation"
       >
         <span class="navbar-toggler-icon"></span>
       </button>
 
-      <!-- 2. 우측 버튼 영역 -->
       <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-          <!-- Case A: 랜딩 페이지 (로그인 전) -->
-          <template v-if="isLanding">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+          <template v-if="!isLogin">
             <li class="nav-item">
-              <a class="nav-link" href="#" @click.prevent="navigate('/login')">로그인</a>
+              <a class="nav-link" href="#" @click.prevent="goLogin">로그인</a>
             </li>
-            <li class="nav-item">
-              <button
-                @click="navigate('/signup')"
-                class="btn btn-primary"
-              >
+            <li class="nav-item ms-2">
+              <button @click="navigate('/signup')" class="btn btn-primary btn-sm rounded-pill px-3">
                 회원가입
               </button>
             </li>
           </template>
 
-          <!-- Case B: 메인 페이지 (로그인 후) -->
           <template v-else>
-            <li class="nav-item">
-              <span class="nav-link">성환이형님</span>
+            <li class="nav-item" v-if="userInfo">
+              <span class="nav-link fw-bold">{{ userInfo.userName }}님</span>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="#" @click.prevent="navigate('/mypage')">내 서재</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#" @click.prevent="navigate('/')">로그아웃</a>
+              <a class="nav-link text-danger" href="#" @click.prevent="goLogout">로그아웃</a>
             </li>
           </template>
         </ul>
@@ -75,3 +85,11 @@ const navigate = (path) => {
     </div>
   </nav>
 </template>
+
+<style scoped>
+/* 배경 투명도 조절용 (필요시 사용) */
+.bg-opacity-75 {
+  --bs-bg-opacity: 0.75;
+  backdrop-filter: blur(5px); /* 블러 효과 추가 */
+}
+</style>
