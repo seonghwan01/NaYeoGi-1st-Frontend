@@ -21,6 +21,12 @@
             모두 비우기
           </button>
         </header>
+        <div class="selected-actions-row">
+          <button type="button" class="primary-btn" :disabled="selectedAttractions.length === 0" @click="goPlan">
+            계획 만들기
+          </button>
+          <p class="muted">{{ selectedAttractions.length ? '순서를 다음 단계에서 조정합니다.' : '최소 1개 이상 선택하세요.' }}</p>
+        </div>
         <div v-if="selectedAttractions.length === 0" class="empty-selected">선택한 장소가 없습니다.</div>
         <div v-else class="selected-list">
           <article v-for="item in selectedAttractions" :key="item.id" class="selected-card">
@@ -229,6 +235,11 @@ onBeforeUnmount(() => {
   cleanupMarkers()
   mapInstance.value = null
 })
+
+const goPlan = () => {
+  if (!selectedAttractions.value.length) return
+  router.push({ name: 'attraction-plan' })
+}
 </script>
 
 <style scoped>
@@ -330,6 +341,35 @@ onBeforeUnmount(() => {
   overflow-y: auto;
   padding-right: 2px;
   max-height: 700px;
+}
+
+.selected-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.primary-btn {
+  background: #4338ca;
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  min-width: 140px;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.primary-btn:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.primary-btn:not(:disabled):hover {
+  box-shadow: 0 6px 16px rgba(67, 56, 202, 0.2);
 }
 
 .selected-card {

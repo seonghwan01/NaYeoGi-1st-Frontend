@@ -26,6 +26,20 @@ export async function requestAttractionRecommendation(requestBody) {
   return response.json()
 }
 
+export async function requestCurrentMember() {
+  const response = await fetch('/api/v1/members/me', {
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    const error = new Error('현재 사용자 정보를 불러오지 못했습니다.')
+    error.status = response.status
+    throw error
+  }
+
+  return response.json()
+}
+
 export const loadKakaoMaps = () => {
   return new Promise((resolve, reject) => {
     if (window.kakao?.maps) {
