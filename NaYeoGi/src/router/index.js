@@ -20,6 +20,11 @@ const router = createRouter({
       component: () => import('@/views/member/MemberJoinView.vue'),
     },
     {
+      path: '/Mypage',
+      name: 'Mypage',
+      component: () => import('@/views/common/MyPage.vue'),
+    },
+    {
       path: '/main',
       name: 'main',
       component: () => import('@/views/common/TheMainView.vue'),

@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMemberStore } from '@/stores/members'
+import axios from 'axios' // [추가] 비동기 통신을 위해 axios 임포트
 
 const router = useRouter()
 const memberStore = useMemberStore()
@@ -13,11 +14,42 @@ const bgImage =
 const joinInfo = ref({
   userId: '',
   userPassword: '',
-  userPasswordConfirm: '', // 비번 확인용 (DB엔 안 보냄)
+  userPasswordConfirm: '',
   userName: '',
   email: '',
-  role: 'USER', // 기본값 설정
+  role: 'USER',
 })
+
+// [추가] 아이디 중복 에러 메시지 저장용 변수
+const idErrMessage = ref('')
+
+// [추가] 아이디 중복 확인 함수 (blur 이벤트 핸들러)
+const checkId = async () => {
+  // 아이디가 비어있으면 검사 안 함
+  if (!joinInfo.value.userId) {
+    idErrMessage.value = ''
+    return
+  }
+
+  try {
+    // 백엔드 컨트롤러 경로: /user/idCheck/{userId}
+    // (프로젝트 설정에 따라 API 기본 경로는 다를 수 있음. 예: http://localhost:8080/user/...)
+    await axios.get(`http://localhost:8080/api/v1/members/id-check/${joinInfo.value.userId}`)
+    // 성공(200 OK)하면 에러 메시지 초기화
+    idErrMessage.value = ''
+  } catch (error) {
+    // 에러 발생 시
+    const res = error.response?.data
+
+    // 백엔드에서 보낸 ErrorCode 확인 (MEMBER_ID_DUPLICATE)
+    if (res && res.code === 'MEMBER_ID_DUPLICATE') {
+      idErrMessage.value = '이미 사용 중인 아이디입니다.'
+    } else {
+      console.error(error)
+      // 필요하면 다른 에러 처리
+    }
+  }
+}
 
 // 회원가입 요청
 const join = async () => {
@@ -29,6 +61,12 @@ const join = async () => {
     !joinInfo.value.email
   ) {
     alert('모든 정보를 입력해주세요.')
+    return
+  }
+
+  // [추가] 아이디 중복 상태라면 가입 막기
+  if (idErrMessage.value) {
+    alert('아이디 중복을 확인해주세요.')
     return
   }
 
@@ -64,13 +102,19 @@ const join = async () => {
 
       <div class="mb-3 text-start">
         <label for="userId" class="form-label">아이디</label>
+
         <input
           type="text"
           id="userId"
           class="form-control"
           v-model="joinInfo.userId"
           placeholder="아이디를 입력하세요"
+          @blur="checkId"
         />
+
+        <div v-if="idErrMessage" class="text-danger mt-1 small fw-bold">
+          {{ idErrMessage }}
+        </div>
       </div>
 
       <div class="mb-3 text-start">
@@ -133,7 +177,7 @@ const join = async () => {
 </template>
 
 <style scoped>
-/* 애니메이션 */
+/* 기존 스타일 유지 */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -148,12 +192,11 @@ const join = async () => {
   animation: fadeInUp 0.6s ease-out forwards;
 }
 
-/* 회원가입 카드 스타일 (유리창 효과) */
 .join-card {
   background-color: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(15px);
   width: 100%;
-  max-width: 500px; /* 로그인창보다 살짝 넓게 */
+  max-width: 500px;
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
