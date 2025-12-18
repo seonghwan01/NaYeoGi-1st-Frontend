@@ -1,5 +1,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap'
+import 'bootstrap-icons/font/bootstrap-icons.css'
+import '@vueup/vue-quill/dist/vue-quill.snow.css';
 import { createApp } from 'vue'
 import { createPinia } from 'pinia' // 상태 관리 추가
 import App from '@/App.vue'

@@ -30,9 +30,21 @@ const router = createRouter({
       component: () => import('@/views/common/TheMainView.vue'),
     },
     {
-      path: '/storybook/create',
+      path: '/storybook/create/:planId',
       name: 'storybook-create',
       component: () => import('@/views/storybook/StoryBookCreateView.vue'),
+      props: true, // planId를 컴포넌트의 props로 전달
+    },
+    {
+      path: '/storybook/edit',
+      name: 'storybook-edit',
+      component: () => import('@/views/storybook/StoryBookEditView.vue'),
+    },
+    {
+      path: '/storybook/view/:storyId',
+      name: 'storybook-view',
+      component: () => import('@/views/storybook/StoryBookDisplayView.vue'),
+      props: true, // storyId를 컴포넌트의 props로 전달
     },
     {
       path: '/attraction/recommend',

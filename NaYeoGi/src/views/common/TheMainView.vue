@@ -9,7 +9,7 @@ const IMG_MAP = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?au
 const CATEGORIES = ['contenttypes', '에 들어갈', 'kmeans로','분류된 관광지', '카테고리'];
 
 // 페이지 이동 함수
-const goStorybook = () => router.push('/storybook/create'); // 추후 생성 필요
+const goStorybook = () => router.push('/storybook/create/1'); // 추후 생성 필요
 const goRecommend = () => router.push('/attraction/recommend'); // 추후 생성 필요
 </script>
 
