@@ -4,14 +4,14 @@
       <div>
         <p class="eyebrow">나의 여정</p>
         <h1 class="title">여행 계획 만들기</h1>
-        <p class="sub">선택한 장소 순서를 드래그해서 저장하세요.</p>
+        <p class="sub">선택한 장소를 날짜별로 드래그해 저장하세요.</p>
       </div>
       <button type="button" class="ghost-btn" @click="router.push({ name: 'attraction-select' })">
         선택 다시 하기
       </button>
     </header>
 
-    <main class="layout">
+    <main :class="['layout', { 'has-days': hasScheduleDays }]">
       <section class="form-card">
         <h2 class="section-title">기본 정보</h2>
         <div class="field">
@@ -47,7 +47,7 @@
         </div>
 
         <div class="info-row">
-          <div class="muted">총 {{ plannedAttractions.length }}곳 · 순서대로 저장됩니다.</div>
+          <div class="muted">총 {{ totalAttractionCount }}곳 · 날짜별 순서로 저장됩니다.</div>
           <button type="button" class="primary-btn" :disabled="isSubmitting" @click="submitPlan">
             {{ isSubmitting ? '저장 중...' : '계획 저장' }}
           </button>
@@ -59,41 +59,59 @@
       <section class="list-card">
         <div class="list-header">
           <div>
-            <p class="eyebrow small">방문 순서</p>
-            <h2 class="list-title">드래그해서 순서를 바꾸세요</h2>
+            <p class="eyebrow small">일정 구성</p>
+            <h2 class="list-title">방문을 원하시는 날짜에 드래그 해주세요</h2>
           </div>
-          <div class="muted">위쪽 카드일수록 먼저 방문합니다.</div>
+          <div class="muted">날짜 칸에 순서를 정리한 그대로 저장됩니다.</div>
         </div>
-
-        <div v-if="!plannedAttractions.length" class="empty">선택된 여행지가 없습니다.</div>
-        <ul v-else class="drag-list">
-          <li
-            v-for="(item, index) in plannedAttractions"
-            :key="item.id"
-            class="drag-card"
-            draggable="true"
-            @dragstart="handleDragStart(index)"
-            @dragover.prevent
-          @drop="handleDrop(index)"
-          @dragend="handleDragEnd"
-        >
-            <div class="drag-handle" aria-hidden="true">::</div>
-            <div class="drag-body">
-              <div class="drag-top">
-                <span class="order-badge">{{ index + 1 }}</span>
-                <div class="name">{{ item.title }}</div>
+        <div v-if="!scheduleDays.length" class="empty">
+          여행 기간을 선택하면 날짜별 칸이 생성됩니다.
+        </div>
+        <div v-else class="day-board" role="list">
+          <div
+            v-for="(day, dayIndex) in scheduleDays"
+            :key="`day-${day.planDate}`"
+            class="day-column"
+          >
+            <div class="day-header">
+              <div class="day-title">
+                <span class="day-sequence">Day {{ day.planDate }}</span>
+                <strong v-if="day.dateLabel">{{ day.dateLabel }}</strong>
+                <strong v-else>날짜 미지정</strong>
               </div>
-              <div class="muted">{{ item.addr1 }}</div>
+              <span class="badge">{{ day.items.length }}곳</span>
             </div>
-          </li>
-        </ul>
+            <ul class="day-list" @dragover.prevent @drop="handleColumnDrop(dayIndex)">
+              <li
+                v-for="(item, itemIndex) in day.items"
+                :key="item.uid"
+                class="drag-card"
+                draggable="true"
+                @dragstart="handleDragStart(dayIndex, itemIndex, $event)"
+                @dragend="handleDragEnd"
+                @dragover.prevent
+                @drop.stop="handleCardDrop(dayIndex, itemIndex)"
+              >
+                <div class="drag-handle" aria-hidden="true">::</div>
+                <div class="drag-body">
+                  <div class="drag-top">
+                    <span class="order-badge">{{ itemIndex + 1 }}</span>
+                    <div class="name">{{ item.title }}</div>
+                  </div>
+                  <div class="muted">{{ item.addr1 }}</div>
+                </div>
+              </li>
+              <li v-if="!day.items.length" class="placeholder">이 날짜에 방문지를 끌어다 놓으세요.</li>
+            </ul>
+          </div>
+        </div>
       </section>
     </main>
   </div>
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, onMounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useAttractionStore } from '@/stores/attractions'
@@ -112,26 +130,166 @@ const form = reactive({
 })
 
 const plannedAttractions = ref([])
-const dragIndex = ref(null)
+const scheduleDays = ref([])
+const dragState = reactive({
+  dayIndex: null,
+  itemIndex: null
+})
 const memberId = ref(null)
 const isSubmitting = ref(false)
 const errorMessage = ref('')
+const totalAttractionCount = computed(() => plannedAttractions.value.length)
+const hasScheduleDays = computed(() => scheduleDays.value.length > 0)
 
-const handleDragStart = (index) => {
-  dragIndex.value = index
+const createAttractionEntries = (items) =>
+  items.map((item, index) => ({
+    ...item,
+    uid: `${item.id}-${index}-${Math.random().toString(36).slice(2, 9)}`
+  }))
+
+const buildPlanDetailsPayload = () =>
+  scheduleDays.value.flatMap((day) =>
+    day.items.map((item, index) => ({
+      attractionId: item.id,
+      planDate: day.planDate,
+      sequence: index + 1
+    }))
+  )
+
+const formatDateLabel = (date) => {
+  try {
+    return new Intl.DateTimeFormat('ko-KR', {
+      month: 'long',
+      day: 'numeric'
+    }).format(date)
+  } catch (error) {
+    console.error(error)
+    return date.toISOString().split('T')[0]
+  }
 }
 
-const handleDrop = (index) => {
-  if (dragIndex.value === null) return
-  const updated = [...plannedAttractions.value]
-  const [moved] = updated.splice(dragIndex.value, 1)
-  updated.splice(index, 0, moved)
-  plannedAttractions.value = updated
-  dragIndex.value = null
+const buildScheduleDays = () => {
+  if (!form.startDate || !form.endDate) {
+    scheduleDays.value = []
+    return
+  }
+
+  const start = new Date(form.startDate)
+  const end = new Date(form.endDate)
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    scheduleDays.value = []
+    return
+  }
+
+  const diff = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1
+  if (diff <= 0) {
+    scheduleDays.value = []
+    return
+  }
+
+  const entryMap = new Map(plannedAttractions.value.map((item) => [item.uid, item]))
+  const assigned = new Set()
+
+  const newDays = Array.from({ length: diff }, (_, idx) => {
+    const date = new Date(start)
+    date.setDate(start.getDate() + idx)
+    return {
+      planDate: idx + 1,
+      dateLabel: formatDateLabel(date),
+      items: []
+    }
+  })
+
+  scheduleDays.value.forEach((day) => {
+    const targetDay = newDays[day.planDate - 1]
+    if (!targetDay) return
+    day.items.forEach((item) => {
+      const mapped = entryMap.get(item.uid)
+      if (mapped && !assigned.has(mapped.uid)) {
+        targetDay.items.push(mapped)
+        assigned.add(mapped.uid)
+      }
+    })
+  })
+
+  const fallbackDay = newDays[0]
+  entryMap.forEach((entry) => {
+    if (!assigned.has(entry.uid) && fallbackDay) {
+      fallbackDay.items.push(entry)
+      assigned.add(entry.uid)
+    }
+  })
+
+  scheduleDays.value = newDays
+}
+
+watch(
+  [() => form.startDate, () => form.endDate, () => plannedAttractions.value.length],
+  () => {
+    buildScheduleDays()
+  },
+  { immediate: true }
+)
+
+const handleDragStart = (dayIndex, itemIndex, event) => {
+  dragState.dayIndex = dayIndex
+  dragState.itemIndex = itemIndex
+  if (event?.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.dropEffect = 'move'
+  }
+}
+
+const moveItem = (targetDayIndex, targetItemIndex = null) => {
+  if (dragState.dayIndex === null || dragState.itemIndex === null) return
+  if (targetDayIndex === null) return
+  const updatedDays = scheduleDays.value.map((day) => ({
+    ...day,
+    items: [...day.items]
+  }))
+  const sourceItems = updatedDays[dragState.dayIndex]?.items
+  const targetItems = updatedDays[targetDayIndex]?.items
+  if (!sourceItems || !targetItems) {
+    dragState.dayIndex = null
+    dragState.itemIndex = null
+    return
+  }
+  const [moved] = sourceItems.splice(dragState.itemIndex, 1)
+  if (!moved) {
+    dragState.dayIndex = null
+    dragState.itemIndex = null
+    return
+  }
+  let insertIndex =
+    targetItemIndex === null || targetItemIndex > targetItems.length
+      ? targetItems.length
+      : targetItemIndex
+
+  if (
+    targetItemIndex !== null &&
+    dragState.dayIndex === targetDayIndex &&
+    dragState.itemIndex < targetItemIndex
+  ) {
+    insertIndex = Math.max(insertIndex - 1, 0)
+  }
+
+  targetItems.splice(insertIndex, 0, moved)
+  scheduleDays.value = updatedDays
+  dragState.dayIndex = null
+  dragState.itemIndex = null
+}
+
+const handleCardDrop = (dayIndex, itemIndex) => {
+  moveItem(dayIndex, itemIndex)
+}
+
+const handleColumnDrop = (dayIndex) => {
+  moveItem(dayIndex, null)
 }
 
 const handleDragEnd = () => {
-  dragIndex.value = null
+  dragState.dayIndex = null
+  dragState.itemIndex = null
 }
 
 const fetchCurrentMember = async () => {
@@ -165,6 +323,18 @@ const validateForm = () => {
     return false
   }
 
+  const planDetails = buildPlanDetailsPayload()
+
+  if (!planDetails.length) {
+    errorMessage.value = '모든 여행지를 방문 날짜에 배치해주세요.'
+    return false
+  }
+
+  if (planDetails.length !== plannedAttractions.value.length) {
+    errorMessage.value = '모든 여행지를 날짜에 맞게 배정해주세요.'
+    return false
+  }
+
   errorMessage.value = ''
   return true
 }
@@ -180,6 +350,8 @@ const submitPlan = async () => {
 
   isSubmitting.value = true
 
+  const planDetails = buildPlanDetailsPayload()
+
   try {
     await requestCreatePlan({
       memberId: memberId.value,
@@ -187,7 +359,8 @@ const submitPlan = async () => {
       startDate: form.startDate,
       endDate: form.endDate,
       description: form.description.trim(),
-      attractionId: plannedAttractions.value.map((item) => item.id)
+      attractionId: plannedAttractions.value.map((item) => item.id),
+      planDetails
     })
     router.push({ name: 'main' })
   } catch (error) {
@@ -203,7 +376,7 @@ onMounted(async () => {
     router.replace({ name: 'attraction-select' })
     return
   }
-  plannedAttractions.value = selectedAttractions.value.map((item) => ({ ...item }))
+  plannedAttractions.value = createAttractionEntries(selectedAttractions.value)
   await fetchCurrentMember()
 })
 </script>
@@ -255,12 +428,24 @@ onMounted(async () => {
   margin: 0 auto;
 }
 
+.layout.has-days {
+  grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.15fr);
+}
+
 .form-card,
 .list-card {
   background: #fff;
   border-radius: 16px;
   padding: 18px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  height: 800px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.form-card {
+  overflow-y: auto;
 }
 
 .section-title,
@@ -361,15 +546,81 @@ onMounted(async () => {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 12px;
+  flex-shrink: 0;
 }
 
-.drag-list {
+.day-board {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(260px, 1fr);
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  flex: 1;
+}
+
+.day-column {
+  display: flex;
+  flex-direction: column;
+  background: #f9fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 12px;
+  height: 100%;
+}
+
+.day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.day-title {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  color: #111827;
+}
+
+.day-sequence {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 700;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.day-list {
   list-style: none;
   padding: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.placeholder {
+  border: 1px dashed #d1d5db;
+  border-radius: 12px;
+  padding: 30px 12px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
 }
 
 .drag-card {
