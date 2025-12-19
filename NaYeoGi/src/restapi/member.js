@@ -28,7 +28,7 @@ async function getMemberInfo(success, fail) {
 
 // 회원 정보 수정
 async function updateMember(member, success, fail) {
-  await local.put(``, member).then(success).catch(fail)
+  await local.put(`/me`, member).then(success).catch(fail)
 }
 
 // 로그아웃
@@ -38,7 +38,7 @@ async function logoutMember(success, fail) {
 
 // 회원 탈퇴
 async function deleteMember(success, fail) {
-  await local.delete(``).then(success).catch(fail)
+  await local.delete(`/me`).then(success).catch(fail)
 }
 
 // 3. 함수 내보내기

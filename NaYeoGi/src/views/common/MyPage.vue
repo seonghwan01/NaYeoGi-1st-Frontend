@@ -15,8 +15,8 @@ const myPlans = ref([]) // 내 여행 계획 리스트
 const myStories = ref([]) // 내 스토리북 리스트
 
 // 배경 이미지 (로그인 페이지와 통일감)
-const bgImage =
-  'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1600&q=80'
+// const bgImage =
+//   'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1600&q=80'
 
 // 2. 초기 데이터 로딩
 onMounted(async () => {
@@ -50,7 +50,7 @@ onMounted(async () => {
 const updateMember = async () => {
   try {
     // 1. 백엔드(DB) 업데이트 요청
-    await axios.put('http://localhost:8080/api/v1/members', userInfo.value, {
+    await axios.put('http://localhost:8080/api/v1/members/me', userInfo.value, {
       withCredentials: true,
     })
 
@@ -75,7 +75,7 @@ const deleteMember = async () => {
 
   try {
     // 2. 백엔드에 탈퇴 요청 (세션 쿠키 포함 필수!)
-    await axios.delete('http://localhost:8080/api/v1/members', {
+    await axios.delete('http://localhost:8080/api/v1/members/me', {
       withCredentials: true,
     })
 

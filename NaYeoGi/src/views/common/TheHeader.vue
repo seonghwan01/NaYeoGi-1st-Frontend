@@ -1,19 +1,19 @@
 <script setup>
-import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { defineProps } from 'vue'
+import { useRouter } from 'vue-router'
 // [추가 1] Pinia Store 연결
 import { useMemberStore } from '@/stores/members'
 import { storeToRefs } from 'pinia'
 
-const route = useRoute()
+const props = defineProps({
+  isLanding: Boolean,
+})
+
 const router = useRouter()
 const memberStore = useMemberStore()
 
 // [추가 2] 반응형으로 로그인 상태와 내 정보 가져오기
 const { isLogin, userInfo } = storeToRefs(memberStore)
-
-// 디자인용: 현재 페이지가 'landing'이면 true (투명/검정 배경 적용용)
-const isLanding = computed(() => route.name === 'landing')
 
 // [수정] 로그인 버튼 클릭 시: 랜딩페이지로 가면서 로그인 창 열기
 const goLogin = () => {
@@ -37,8 +37,8 @@ const navigate = (path) => {
       'navbar',
       'navbar-expand-lg',
       'fixed-top',
-      // 디자인은 기존 로직 유지 (랜딩에선 어둡게, 그 외엔 밝게)
-      isLanding ? 'navbar-dark bg-dark bg-opacity-75' : 'navbar-light bg-light shadow-sm',
+      // isLanding prop에 따라 클래스 동적 할당
+      isLanding ? 'navbar-dark bg-semi-transparent-gray' : 'navbar-light bg-light shadow-sm',
     ]"
     style="transition: all 0.3s ease-in-out"
   >
@@ -87,6 +87,11 @@ const navigate = (path) => {
 </template>
 
 <style scoped>
+.bg-semi-transparent-gray {
+  background-color: rgba(60, 60, 60, 0.7); /* 어두운 회색, 70% 불투명 */
+  backdrop-filter: blur(5px); /* 배경 블러 효과 */
+}
+
 /* 배경 투명도 조절용 (필요시 사용) */
 .bg-opacity-75 {
   --bs-bg-opacity: 0.75;

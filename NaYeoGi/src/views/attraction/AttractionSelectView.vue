@@ -10,104 +10,106 @@
       </button>
     </header>
 
-    <div class="layout">
-      <section class="selected-panel">
-        <header class="selected-header">
-          <div>
-            <p class="eyebrow small">선택한 장소</p>
-            <h2 class="selected-title">총 {{ selectedAttractions.length }}곳</h2>
+    <ContentCard>
+      <div class="layout">
+        <section class="selected-panel">
+          <header class="selected-header">
+            <div>
+              <p class="eyebrow small">선택한 장소</p>
+              <h2 class="selected-title">총 {{ selectedAttractions.length }}곳</h2>
+            </div>
+            <button v-if="selectedAttractions.length" type="button" class="ghost-btn sm" @click="clearSelections">
+              모두 비우기
+            </button>
+          </header>
+          <div class="selected-actions-row">
+            <button type="button" class="primary-btn" :disabled="selectedAttractions.length === 0" @click="goPlan">
+              계획 만들기
+            </button>
+            <p class="muted">{{ selectedAttractions.length ? '순서를 다음 단계에서 조정합니다.' : '최소 1개 이상 선택하세요.' }}</p>
           </div>
-          <button v-if="selectedAttractions.length" type="button" class="ghost-btn sm" @click="clearSelections">
-            모두 비우기
-          </button>
-        </header>
-        <div class="selected-actions-row">
-          <button type="button" class="primary-btn" :disabled="selectedAttractions.length === 0" @click="goPlan">
-            계획 만들기
-          </button>
-          <p class="muted">{{ selectedAttractions.length ? '순서를 다음 단계에서 조정합니다.' : '최소 1개 이상 선택하세요.' }}</p>
-        </div>
-        <div v-if="selectedAttractions.length === 0" class="empty-selected">선택한 장소가 없습니다.</div>
-        <div v-else class="selected-list">
-          <article v-for="item in selectedAttractions" :key="item.id" class="selected-card">
-            <div class="selected-thumb">
-              <img v-if="item.first_image1" :src="item.first_image1" :alt="item.title" />
-              <div v-else class="thumb-fallback">No Image</div>
-            </div>
-            <div class="selected-body">
-              <div class="selected-top">
-                <div class="selected-name">{{ item.title }}</div>
-                <span class="selected-badge">{{ resolveCategoryLabel(item.content_type_id) }}</span>
+          <div v-if="selectedAttractions.length === 0" class="empty-selected">선택한 장소가 없습니다.</div>
+          <div v-else class="selected-list">
+            <article v-for="item in selectedAttractions" :key="item.id" class="selected-card">
+              <div class="selected-thumb">
+                <img v-if="item.first_image1" :src="item.first_image1" :alt="item.title" />
+                <div v-else class="thumb-fallback">No Image</div>
               </div>
-              <div class="selected-addr">{{ item.addr1 }}</div>
-              <div class="selected-actions">
-                <button type="button" class="ghost-btn sm" @click="focusOnAttraction(item)">지도 보기</button>
-                <button type="button" class="remove-btn" @click="removeSelection(item.id)">삭제</button>
+              <div class="selected-body">
+                <div class="selected-top">
+                  <div class="selected-name">{{ item.title }}</div>
+                  <span class="selected-badge">{{ resolveCategoryLabel(item.content_type_id) }}</span>
+                </div>
+                <div class="selected-addr">{{ item.addr1 }}</div>
+                <div class="selected-actions">
+                  <button type="button" class="ghost-btn sm" @click="focusOnAttraction(item)">지도 보기</button>
+                  <button type="button" class="remove-btn" @click="removeSelection(item.id)">삭제</button>
+                </div>
               </div>
-            </div>
-          </article>
-        </div>
-      </section>
+            </article>
+          </div>
+        </section>
 
-      <div class="map-pane">
-        <div ref="mapContainer" class="map-canvas"></div>
+        <div class="map-pane">
+          <div ref="mapContainer" class="map-canvas"></div>
+        </div>
+
+        <section class="list-pane">
+          <header class="list-header">
+            <div>
+              <p class="list-count">총 {{ displayedAttractions.length }}곳</p>
+              <p class="list-sub">추천 점수 높은 순으로 정렬했어요.</p>
+            </div>
+          </header>
+
+          <div class="tab-row">
+            <button
+              v-for="tab in tabs"
+              :key="tab.key"
+              type="button"
+              class="tab-btn"
+              :class="{ active: activeTab === tab.key }"
+              @click="switchTab(tab.key)"
+            >
+              {{ tab.label }}
+            </button>
+          </div>
+
+          <div class="card-list">
+            <article
+              v-for="attraction in displayedAttractions"
+              :key="attraction.id"
+              class="card"
+              :class="{ active: selectedId === attraction.id }"
+              @click="focusOnAttraction(attraction)"
+            >
+              <div class="thumb">
+                <img v-if="attraction.first_image1" :src="attraction.first_image1" :alt="attraction.title" />
+                <div v-else class="thumb-fallback">No Image</div>
+              </div>
+              <div class="card-body">
+                <div class="card-title">{{ attraction.title }}</div>
+                <div class="card-addr">{{ attraction.addr1 }}</div>
+                <div class="meta-row">
+                  <span class="badge">점수 {{ attraction.cal_score?.toFixed(3) ?? 'N/A' }}</span>
+                  <span v-if="attraction.tel" class="muted">{{ attraction.tel }}</span>
+                </div>
+                <div class="card-actions">
+                  <button
+                    type="button"
+                    class="ghost-btn sm"
+                    :class="{ active: isSelected(attraction.id) }"
+                    @click.stop="toggleSelection(attraction)"
+                  >
+                    {{ isSelected(attraction.id) ? '선택됨' : '선택하기' }}
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
       </div>
-
-      <section class="list-pane">
-        <header class="list-header">
-          <div>
-            <p class="list-count">총 {{ displayedAttractions.length }}곳</p>
-            <p class="list-sub">추천 점수 높은 순으로 정렬했어요.</p>
-          </div>
-        </header>
-
-        <div class="tab-row">
-          <button
-            v-for="tab in tabs"
-            :key="tab.key"
-            type="button"
-            class="tab-btn"
-            :class="{ active: activeTab === tab.key }"
-            @click="switchTab(tab.key)"
-          >
-            {{ tab.label }}
-          </button>
-        </div>
-
-        <div class="card-list">
-          <article
-            v-for="attraction in displayedAttractions"
-            :key="attraction.id"
-            class="card"
-            :class="{ active: selectedId === attraction.id }"
-            @click="focusOnAttraction(attraction)"
-          >
-            <div class="thumb">
-              <img v-if="attraction.first_image1" :src="attraction.first_image1" :alt="attraction.title" />
-              <div v-else class="thumb-fallback">No Image</div>
-            </div>
-            <div class="card-body">
-              <div class="card-title">{{ attraction.title }}</div>
-              <div class="card-addr">{{ attraction.addr1 }}</div>
-              <div class="meta-row">
-                <span class="badge">점수 {{ attraction.cal_score?.toFixed(3) ?? 'N/A' }}</span>
-                <span v-if="attraction.tel" class="muted">{{ attraction.tel }}</span>
-              </div>
-              <div class="card-actions">
-                <button
-                  type="button"
-                  class="ghost-btn sm"
-                  :class="{ active: isSelected(attraction.id) }"
-                  @click.stop="toggleSelection(attraction)"
-                >
-                  {{ isSelected(attraction.id) ? '선택됨' : '선택하기' }}
-                </button>
-              </div>
-            </div>
-          </article>
-        </div>
-      </section>
-    </div>
+    </ContentCard>
   </div>
 </template>
 
@@ -117,6 +119,7 @@ import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { loadKakaoMaps } from '@/restapi/attraction'
 import { useAttractionStore } from '@/stores/attractions'
+import ContentCard from '@/components/common/ContentCard.vue';
 
 const router = useRouter()
 const attractionStore = useAttractionStore()
@@ -245,8 +248,8 @@ const goPlan = () => {
 <style scoped>
 .select-page {
   min-height: 100vh;
-  background: #f7f9fb;
-  padding: 20px;
+  /* background: #f7f9fb; - 제거 */
+  /* padding: 20px; - 제거 */
   color: #1f2d3d;
 }
 
@@ -256,6 +259,7 @@ const goPlan = () => {
   justify-content: space-between;
   max-width: 1200px;
   margin: 0 auto 18px;
+  padding-top: 20px; /* 위쪽 패딩만 유지 */
 }
 
 .eyebrow {

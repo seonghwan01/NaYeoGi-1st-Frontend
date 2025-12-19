@@ -1,159 +1,161 @@
 <template>
   <div class="container py-5" style="max-width: 900px;">
-
-    <!-- 로딩 오버레이 -->
-    <div v-if="storybookStore.isLoading || planStore.isLoading" class="loading-overlay">
-      <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
-      <h4 class="mt-4 fw-bold">
-        {{ planStore.isLoading ? '계획을 불러오는 중...' : 'AI가 스토리를 만들고 있어요...' }}
-      </h4>
-      <p class="text-muted">잠시만 기다려주세요.</p>
-    </div>
-
-    <div class="text-center mb-5">
-      <h1 class="fw-bold display-6 mb-2">✨ AI 여행 기록</h1>
-      <p class="text-muted">카드 왼쪽 위의 손잡이를 잡고 자유롭게 순서를 바꿔보세요.</p>
-    </div>
-
-    <div class="card shadow-sm mb-5 border-0">
-      <div class="card-body p-4 bg-white rounded">
-        <div class="mb-4">
-          <label class="form-label fw-bold text-dark">🏷️ 여행 제목</label>
-          <input type="text" class="form-control form-control-lg bg-light border-0" v-model="storyTitle" placeholder="예: 3대가 함께한 우당탕탕 제주 여행">
-        </div>
-        <div class="mb-4">
-          <label class="form-label fw-bold text-dark mb-2">🗓️ 여행 기간</label>
-          <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fs-6">📅 {{ formattedDate }}</span>
-            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-3 py-2 rounded-pill fs-6">⏱️ {{ durationLabel }}</span>
-            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-2 rounded-pill fs-6">{{ seasonLabel }}</span>
-          </div>
-        </div>
-        <div class="mb-4">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-             <label class="form-label fw-bold text-dark mb-0">👥 누구와 함께했나요?</label>
-             <span class="small text-muted" v-if="whoWith.length > 0">{{ whoWith.map(id => getLabel(COMPANIONS, id)).join(', ') }}</span>
-          </div>
-          <div class="d-flex flex-wrap gap-2">
-             <button v-for="c in COMPANIONS" :key="c.id" class="btn btn-sm rounded-pill px-3 py-2 transition-btn" :class="whoWith.includes(c.id) ? 'btn-dark' : 'btn-outline-secondary border-0 bg-light text-secondary'" @click="toggleSelection(whoWith, c.id)">{{ c.label }}</button>
-          </div>
-        </div>
-        <div class="mb-2">
-           <div class="d-flex justify-content-between align-items-center mb-2">
-             <label class="form-label fw-bold text-dark mb-0">🎨 전체적인 글 분위기 <span class="text-primary small">(최대 3개)</span></label>
-             <span class="small text-muted" v-if="selectedTones.length > 0">{{ selectedTones.map(id => getLabel(STORY_TONES, id)).join(', ') }}</span>
-           </div>
-           <div class="d-flex flex-wrap gap-2">
-             <button v-for="t in displayedTones" :key="t.id" class="btn btn-sm rounded-pill px-3 py-2 d-flex align-items-center gap-2 transition-btn" :class="selectedTones.includes(t.id) ? 'btn-primary shadow-sm' : 'btn-outline-secondary border-0 bg-light text-secondary'" @click="toggleSelection(selectedTones, t.id, 3)"><span>{{ t.icon }}</span><span>{{ t.label }}</span></button>
-             <button v-if="STORY_TONES.length > limitCount" class="btn btn-sm btn-link text-decoration-none text-muted fw-bold" @click="isExpanded = !isExpanded">{{ isExpanded ? '접기 ▲' : '+ 더보기' }}</button>
-           </div>
-        </div>
+    <ContentCard>
+      <!-- 로딩 오버레이 -->
+      <div v-if="storybookStore.isLoading || planStore.isLoading" class="loading-overlay">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+        <h4 class="mt-4 fw-bold">
+          {{ planStore.isLoading ? '계획을 불러오는 중...' : 'AI가 스토리를 만들고 있어요...' }}
+        </h4>
+        <p class="text-muted">잠시만 기다려주세요.</p>
       </div>
-    </div>
 
-    <div v-if="planStore.isLoading && !storyDays.length" class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>
+      <div class="text-center mb-5">
+        <h1 class="fw-bold display-6 mb-2">✨ AI 여행 기록</h1>
+        <p class="text-muted">카드 왼쪽 위의 손잡이를 잡고 자유롭게 순서를 바꿔보세요.</p>
+      </div>
 
-    <div v-else>
-      <div v-for="(dayItem, dayIndex) in storyDays" :key="dayIndex" class="card mb-5 border-0 shadow-sm bg-light">
-
-        <div
-          class="card-header bg-white border-bottom-0 p-4 rounded-top"
-          @dragover.prevent="onDragOver"
-          @drop="onDrop(dayIndex)"
-        >
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="fw-bold mb-0 text-primary">
-              <span class="badge bg-primary me-2">Day {{ dayItem.dayNum }}</span>
-              <span class="text-dark fs-5 align-middle">{{ dayItem.date }} ({{ getDayOfWeek(dayItem.date) }})</span>
-            </h4>
+      <div class="card shadow-sm mb-5 border-0">
+        <div class="card-body p-4 bg-white rounded">
+          <div class="mb-4">
+            <label class="form-label fw-bold text-dark">🏷️ 여행 제목</label>
+            <input type="text" class="form-control form-control-lg bg-light border-0" v-model="storyTitle" placeholder="예: 3대가 함께한 우당탕탕 제주 여행">
           </div>
-          <div class="bg-light p-3 rounded border border-light-subtle">
-             <label class="form-label small text-muted fw-bold mb-2">⛅ Day {{ dayItem.dayNum }}의 날씨는 어땠나요?</label>
+          <div class="mb-4">
+            <label class="form-label fw-bold text-dark mb-2">🗓️ 여행 기간</label>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fs-6">📅 {{ formattedDate }}</span>
+              <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-3 py-2 rounded-pill fs-6">⏱️ {{ durationLabel }}</span>
+              <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-2 rounded-pill fs-6">{{ seasonLabel }}</span>
+            </div>
+          </div>
+          <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+               <label class="form-label fw-bold text-dark mb-0">👥 누구와 함께했나요?</label>
+               <span class="small text-muted" v-if="whoWith.length > 0">{{ whoWith.map(id => getLabel(COMPANIONS, id)).join(', ') }}</span>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+               <button v-for="c in COMPANIONS" :key="c.id" class="btn btn-sm rounded-pill px-3 py-2 transition-btn" :class="whoWith.includes(c.id) ? 'btn-dark' : 'btn-outline-secondary border-0 bg-light text-secondary'" @click="toggleSelection(whoWith, c.id)">{{ c.label }}</button>
+            </div>
+          </div>
+          <div class="mb-2">
+             <div class="d-flex justify-content-between align-items-center mb-2">
+               <label class="form-label fw-bold text-dark mb-0">🎨 전체적인 글 분위기 <span class="text-primary small">(최대 3개)</span></label>
+               <span class="small text-muted" v-if="selectedTones.length > 0">{{ selectedTones.map(id => getLabel(STORY_TONES, id)).join(', ') }}</span>
+             </div>
              <div class="d-flex flex-wrap gap-2">
-                <button v-for="w in WEATHER_TAGS" :key="w.id" class="btn btn-sm rounded-pill px-3 py-1 transition-btn" :class="dayItem.weather.includes(w.id) ? 'btn-warning text-dark border-warning' : 'btn-white border text-secondary'" @click="toggleSelection(dayItem.weather, w.id)">{{ w.icon }} {{ w.label }}</button>
+               <button v-for="t in displayedTones" :key="t.id" class="btn btn-sm rounded-pill px-3 py-2 d-flex align-items-center gap-2 transition-btn" :class="selectedTones.includes(t.id) ? 'btn-primary shadow-sm' : 'btn-outline-secondary border-0 bg-light text-secondary'" @click="toggleSelection(selectedTones, t.id, 3)"><span>{{ t.icon }}</span><span>{{ t.label }}</span></button>
+               <button v-if="STORY_TONES.length > limitCount" class="btn btn-sm btn-link text-decoration-none text-muted fw-bold" @click="isExpanded = !isExpanded">{{ isExpanded ? '접기 ▲' : '+ 더보기' }}</button>
              </div>
           </div>
         </div>
+      </div>
 
-        <div class="card-body p-3 min-h-100"
-             @dragover.prevent="onDragOver"
-             @drop="onDrop(dayIndex)"
-        >
-          <div v-if="dayItem.sections.length === 0" class="text-center py-5 text-muted border rounded border-dashed bg-white mb-3">
-            <p class="mb-0">방문한 장소가 없습니다.<br>장소를 추가하거나 드래그해오세요.</p>
-          </div>
+      <div v-if="planStore.isLoading && !storyDays.length" class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>
+
+      <div v-else>
+        <div v-for="(dayItem, dayIndex) in storyDays" :key="dayIndex" class="card mb-5 border-0 shadow-sm bg-light">
 
           <div
-            v-for="(section, secIndex) in dayItem.sections"
-            :key="section.id"
-            class="draggable-item position-relative mb-4 ms-2"
-            :class="{ 'dragging': isDragging(dayIndex, secIndex) }"
-            :draggable="isDragEnabled"
-            @dragstart="onDragStart($event, dayIndex, secIndex)"
-            @dragend="onDragEnd"
-            @dragenter.prevent="onDragEnter(dayIndex, secIndex)"
+            class="card-header bg-white border-bottom-0 p-4 rounded-top"
             @dragover.prevent="onDragOver"
-            @drop.stop="onDrop(dayIndex, secIndex)"
+            @drop="onDrop(dayIndex)"
           >
-            <div
-              class="drag-handle-outer d-flex justify-content-center align-items-center shadow-sm"
-              title="이동하려면 잡고 드래그하세요"
-              @mousedown="onHandleMouseDown"
-              @mouseup="onHandleMouseUp"
-            >
-              <i class="bi bi-grip-vertical text-secondary" style="font-size: 1.2rem;"></i>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h4 class="fw-bold mb-0 text-primary">
+                <span class="badge bg-primary me-2">Day {{ dayItem.dayNum }}</span>
+                <span class="text-dark fs-5 align-middle">{{ dayItem.date }} ({{ getDayOfWeek(dayItem.date) }})</span>
+              </h4>
             </div>
-
-            <StorySection
-              :index="secIndex"
-              :sectionData="section"
-              @remove-section="removeSection(dayIndex, secIndex)"
-              @update-images="(files) => section.images = files"
-              @update-memo="(text) => section.memo = text"
-              @update-place-name="(text) => section.placeName = text"
-              @toggle-tag="(tag) => toggleTag(section, tag)"
-              @preview-image="openImageModal"
-            >
-              <template #day-control>
-                <div class="ms-3">
-                  <select
-                    class="form-select form-select-sm border-0 bg-light text-secondary fw-bold"
-                    style="width: 80px; font-size: 0.75rem;"
-                    :value="dayIndex"
-                    @change="(e) => moveSectionToDay(dayIndex, secIndex, parseInt(e.target.value))"
-                  >
-                    <option v-for="(d, idx) in storyDays" :key="idx" :value="idx">Day {{ d.dayNum }}</option>
-                  </select>
-                </div>
-              </template>
-            </StorySection>
+            <div class="bg-light p-3 rounded border border-light-subtle">
+               <label class="form-label small text-muted fw-bold mb-2">⛅ Day {{ dayItem.dayNum }}의 날씨는 어땠나요?</label>
+               <div class="d-flex flex-wrap gap-2">
+                  <button v-for="w in WEATHER_TAGS" :key="w.id" class="btn btn-sm rounded-pill px-3 py-1 transition-btn" :class="dayItem.weather.includes(w.id) ? 'btn-warning text-dark border-warning' : 'btn-white border text-secondary'" @click="toggleSelection(dayItem.weather, w.id)">{{ w.icon }} {{ w.label }}</button>
+               </div>
+            </div>
           </div>
 
-          <button class="btn btn-white w-100 border-dashed text-primary py-3 mt-2 fw-bold" @click="addSectionToDay(dayIndex)">
-            <i class="bi bi-plus-lg me-1"></i> Day {{ dayItem.dayNum }}에 장소 추가하기
-          </button>
-        </div>
-      </div>
-    </div>
+          <div class="card-body p-3 min-h-100"
+               @dragover.prevent="onDragOver"
+               @drop="onDrop(dayIndex)"
+          >
+            <div v-if="dayItem.sections.length === 0" class="text-center py-5 text-muted border rounded border-dashed bg-white mb-3">
+              <p class="mb-0">방문한 장소가 없습니다.<br>장소를 추가하거나 드래그해오세요.</p>
+            </div>
 
-    <div class="fixed-bottom bg-white border-top py-3 shadow-lg" style="z-index: 900;">
-      <div class="container" style="max-width: 900px;">
-        <div class="d-flex justify-content-end gap-2">
-          <button class="btn btn-light border px-4" @click="saveTemp">임시 저장</button>
-          <button class="btn btn-primary px-4 fw-bold shadow-sm" @click="generateStory">AI 스토리 생성</button>
+            <div
+              v-for="(section, secIndex) in dayItem.sections"
+              :key="section.id"
+              class="draggable-item position-relative mb-4 ms-2"
+              :class="{ 'dragging': isDragging(dayIndex, secIndex) }"
+              :draggable="isDragEnabled"
+              @dragstart="onDragStart($event, dayIndex, secIndex)"
+              @dragend="onDragEnd"
+              @dragenter.prevent="onDragEnter(dayIndex, secIndex)"
+              @dragover.prevent="onDragOver"
+              @drop.stop="onDrop(dayIndex, secIndex)"
+            >
+              <div
+                class="drag-handle-outer d-flex justify-content-center align-items-center shadow-sm"
+                title="이동하려면 잡고 드래그하세요"
+                @mousedown="onHandleMouseDown"
+                @mouseup="onHandleMouseUp"
+              >
+                <i class="bi bi-grip-vertical text-secondary" style="font-size: 1.2rem;"></i>
+              </div>
+
+              <StorySection
+                :index="secIndex"
+                :sectionData="section"
+                @remove-section="removeSection(dayIndex, secIndex)"
+                @update-images="(files) => section.images = files"
+                @update-memo="(text) => section.memo = text"
+                @update-place-name="(text) => section.placeName = text"
+                @toggle-tag="(tag) => toggleTag(section, tag)"
+                @preview-image="openImageModal"
+              >
+                <template #day-control>
+                  <div class="ms-3">
+                    <select
+                      class="form-select form-select-sm border-0 bg-light text-secondary fw-bold"
+                      style="width: 80px; font-size: 0.75rem;"
+                      :value="dayIndex"
+                      @change="(e) => moveSectionToDay(dayIndex, secIndex, parseInt(e.target.value))"
+                    >
+                      <option v-for="(d, idx) in storyDays" :key="idx" :value="idx">Day {{ d.dayNum }}</option>
+                    </select>
+                  </div>
+                </template>
+              </StorySection>
+            </div>
+
+            <button class="btn btn-white w-100 border-dashed text-primary py-3 mt-2 fw-bold" @click="addSectionToDay(dayIndex)">
+              <i class="bi bi-plus-lg me-1"></i> Day {{ dayItem.dayNum }}에 장소 추가하기
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-    <div style="height: 80px;"></div>
-    <div v-if="modalImage" class="image-modal-overlay" @click="closeImageModal">
-      <div class="image-modal-content"><img :src="modalImage" class="img-fluid rounded shadow"></div>
-    </div>
+
+      <div class="fixed-bottom bg-white border-top py-3 shadow-lg" style="z-index: 900;">
+        <div class="container" style="max-width: 900px;">
+          <div class="d-flex justify-content-end gap-2">
+            <button class="btn btn-light border px-4" @click="saveTemp">임시 저장</button>
+            <button class="btn btn-primary px-4 fw-bold shadow-sm" @click="generateStory">AI 스토리 생성</button>
+          </div>
+        </div>
+      </div>
+      <div style="height: 80px;"></div>
+      <div v-if="modalImage" class="image-modal-overlay" @click="closeImageModal">
+        <div class="image-modal-content"><img :src="modalImage" class="img-fluid rounded shadow"></div>
+      </div>
+    </ContentCard>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import StorySection from '@/components/storybook/StorySection.vue';
+import ContentCard from '@/components/common/ContentCard.vue';
 import { useStorybookStore } from '@/stores/storybook';
 import { usePlanStore } from '@/stores/plan'; // 1. Plan 스토어 임포트
 import { useDraggable } from '@/composables/useDraggable';

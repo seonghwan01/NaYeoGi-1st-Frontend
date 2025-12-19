@@ -7,8 +7,8 @@ import axios from 'axios' // [추가] 비동기 통신을 위해 axios 임포트
 const router = useRouter()
 const memberStore = useMemberStore()
 
-const bgImage =
-  'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1600&q=80'
+// const bgImage =
+//   // 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1600&q=80'
 
 // 입력 데이터
 const joinInfo = ref({
@@ -92,10 +92,10 @@ const join = async () => {
       backgroundPosition: 'center',
     }"
   >
-    <div
+    <!-- <div
       class="position-absolute top-0 start-0 w-100 h-100"
       style="background-color: rgba(0, 0, 0, 0.6)"
-    ></div>
+    ></div> -->
 
     <div class="position-relative animate-fade-in-up join-card p-5 rounded-4 shadow-lg text-center">
       <h2 class="mb-4 fw-bold">회원가입</h2>
