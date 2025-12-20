@@ -16,6 +16,10 @@ const isPlansLoading = ref(false)
 const planError = ref('')
 const myStories = ref([]) // 내 스토리북 리스트
 const planOwnerId = ref('')
+const editingPlanId = ref(null)
+const editingPlanDraft = ref(null)
+const isSavingPlan = ref(false)
+const planSaveError = ref('')
 
 // 배경 이미지 (로그인 페이지와 통일감)
 // const bgImage =
@@ -83,11 +87,6 @@ const sortedPlans = computed(() => {
     return aTime - bTime
   })
 })
-
-const featuredPlan = computed(() => sortedPlans.value[0] ?? null)
-const additionalPlans = computed(() =>
-  featuredPlan.value ? sortedPlans.value.slice(1) : sortedPlans.value,
-)
 
 const fetchMemberInfo = async () => {
   if (memberStore.userInfo && memberStore.userInfo.userId) {
@@ -159,9 +158,71 @@ const goToPlanBuilder = () => {
   router.push({ name: 'attraction-select' })
 }
 
-const goToStoryBuilder = (planId) => {
-  if (!planId) return
-  router.push({ name: 'storybook-create', params: { planId } })
+const startEditPlan = (plan) => {
+  editingPlanId.value = plan.id
+  planSaveError.value = ''
+  editingPlanDraft.value = {
+    ...plan,
+    startDate: plan.startDate || '',
+    endDate: plan.endDate || '',
+    createdAt: plan.createdAt || '',
+  }
+}
+
+const cancelEditPlan = () => {
+  editingPlanId.value = null
+  editingPlanDraft.value = null
+  planSaveError.value = ''
+}
+
+const replacePlanInList = (updatedPlan) => {
+  const idx = myPlans.value.findIndex((p) => p.id === updatedPlan.id)
+  if (idx !== -1) {
+    myPlans.value[idx] = { ...myPlans.value[idx], ...updatedPlan }
+  }
+}
+
+const savePlanEdit = async () => {
+  if (!editingPlanDraft.value) return
+  const draft = editingPlanDraft.value
+  if (!draft.title) {
+    planSaveError.value = '제목을 입력하세요.'
+    return
+  }
+  const start = parseDate(draft.startDate)
+  const end = parseDate(draft.endDate)
+  if (start && end && end < start) {
+    planSaveError.value = '종료일은 시작일 이후여야 합니다.'
+    return
+  }
+
+  isSavingPlan.value = true
+  planSaveError.value = ''
+  try {
+    const payload = {
+      title: draft.title,
+      startDate: draft.startDate || null,
+      endDate: draft.endDate || null,
+      description: draft.description || '',
+      attractionId: draft.attractionId ?? [],
+    }
+
+    const response = await axios.put(
+      `http://localhost:8080/api/v1/plans/${draft.id}`,
+      payload,
+      { withCredentials: true },
+    )
+
+    const raw = response.data?.data ?? response.data ?? draft
+    const [normalized] = normalizePlans(Array.isArray(raw) ? raw : [raw])
+    replacePlanInList(normalized || draft)
+    cancelEditPlan()
+  } catch (error) {
+    console.error('여행 계획 수정 실패', error)
+    planSaveError.value = '수정에 실패했습니다. 잠시 후 다시 시도해주세요.'
+  } finally {
+    isSavingPlan.value = false
+  }
 }
 
 // 3. 회원 정보 수정 로직
@@ -326,49 +387,76 @@ const fetchMyPlans = async () => {
                 </button>
               </div>
               <div v-else>
-                <div v-if="featuredPlan" class="plan-banner rounded-4 p-4 mb-4">
-                  <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4">
-                    <div>
-                      <div class="plan-chip mb-2">이번 여정</div>
-                      <h5 class="plan-title mb-2">{{ featuredPlan.title }}</h5>
-                      <p class="plan-period mb-1">
-                        {{ formatPlanPeriod(featuredPlan) }}
-                        <span v-if="calcDurationDays(featuredPlan)">
-                          · {{ calcDurationDays(featuredPlan) }}일 일정
-                        </span>
-                      </p>
-                      <p class="plan-desc mb-0">{{ featuredPlan.description || '메모가 없습니다.' }}</p>
+                <div class="plan-list">
+                  <div
+                    v-for="plan in sortedPlans"
+                    :key="plan.id"
+                    class="plan-card rounded-4 p-3 mb-3"
+                  >
+                    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3">
+                      <div class="flex-grow-1">
+                        <h6 class="mb-2">{{ plan.title }}</h6>
+                        <p class="mb-1 small">
+                          {{ formatPlanPeriod(plan) }}
+                          <span v-if="calcDurationDays(plan)">
+                            · {{ calcDurationDays(plan) }}일
+                          </span>
+                        </p>
+                        <p class="mb-0 text-white-50 small">{{ plan.description || '메모 없음' }}</p>
+                      </div>
+                      <div class="text-md-end small text-white-50">
+                        {{ formatCreatedAt(plan) || '작성일 정보 없음' }}
+                      </div>
                     </div>
-                    <div class="text-md-end">
-                      <p class="plan-created mb-2">{{ formatCreatedAt(featuredPlan) }}</p>
+                    <div class="mt-3 d-flex align-items-center gap-2">
                       <button
-                        class="btn btn-light text-primary fw-bold"
-                        @click="goToStoryBuilder(featuredPlan.id)"
+                        class="btn btn-outline-light btn-sm"
+                        :disabled="isSavingPlan && editingPlanId === plan.id"
+                        @click="startEditPlan(plan)"
                       >
-                        스토리북 작성하기
+                        수정
                       </button>
                     </div>
-                  </div>
-                </div>
-
-                <div v-if="additionalPlans.length" class="plan-list">
-                  <div
-                    v-for="plan in additionalPlans"
-                    :key="plan.id"
-                    class="plan-card rounded-4 p-3 mb-3 d-flex flex-column flex-md-row align-items-start align-items-md-center"
-                  >
-                    <div class="flex-grow-1">
-                      <h6 class="mb-2">{{ plan.title }}</h6>
-                      <p class="mb-1 small">
-                        {{ formatPlanPeriod(plan) }}
-                        <span v-if="calcDurationDays(plan)">
-                          · {{ calcDurationDays(plan) }}일
-                        </span>
-                      </p>
-                      <p class="mb-0 text-white-50 small">{{ plan.description || '메모 없음' }}</p>
-                    </div>
-                    <div class="text-md-end small text-white-50 mt-2 mt-md-0">
-                      {{ formatCreatedAt(plan) || '작성일 정보 없음' }}
+                    <div
+                      v-if="editingPlanId === plan.id && editingPlanDraft"
+                      class="mt-3 p-3 rounded-3 plan-edit"
+                    >
+                      <div class="row g-3">
+                        <div class="col-md-6">
+                          <label class="form-label small text-white-50">제목</label>
+                          <input
+                            v-model="editingPlanDraft.title"
+                            type="text"
+                            class="form-control"
+                            required
+                          />
+                        </div>
+                        <div class="col-md-3">
+                          <label class="form-label small text-white-50">시작일</label>
+                          <input v-model="editingPlanDraft.startDate" type="date" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                          <label class="form-label small text-white-50">종료일</label>
+                          <input v-model="editingPlanDraft.endDate" type="date" class="form-control" />
+                        </div>
+                        <div class="col-12">
+                          <label class="form-label small text-white-50">설명</label>
+                          <textarea v-model="editingPlanDraft.description" class="form-control" rows="3" />
+                        </div>
+                      </div>
+                      <div class="d-flex align-items-center gap-2 mt-3">
+                        <button
+                          class="btn btn-primary btn-sm"
+                          :disabled="isSavingPlan"
+                          @click="savePlanEdit"
+                        >
+                          저장
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" @click="cancelEditPlan">
+                          취소
+                        </button>
+                        <span v-if="planSaveError" class="text-warning small">{{ planSaveError }}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -428,41 +516,13 @@ const fetchMyPlans = async () => {
   animation: fadeInUp 0.6s ease-out forwards;
 }
 
-.plan-banner {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(13, 110, 253, 0.25));
-  border: 1px solid rgba(255, 255, 255, 0.25);
-}
-
-.plan-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 12px;
-  border-radius: 999px;
-  background-color: rgba(0, 0, 0, 0.25);
-  font-size: 0.85rem;
-  letter-spacing: 0.05em;
-}
-
-.plan-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
-.plan-period {
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.plan-desc {
-  color: rgba(255, 255, 255, 0.75);
-}
-
-.plan-created {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.9rem;
-}
-
 .plan-card {
   background-color: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.plan-edit {
+  background-color: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 </style>
