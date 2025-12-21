@@ -3,53 +3,87 @@
  *
  * @todo 백엔드 API 명세에 맞춰 실제 요청 로직 구현 필요
  */
-import axios from 'axios';
+import axios from "axios";
 
 // Axios 인스턴스 생성 (필요에 따라 설정 추가)
-const apiClient = axios.create({
-  baseURL: '/api', // 백엔드 API의 기본 URL
-  // timeout: 10000,
+const restApi = axios.create({
+  baseURL: "http://localhost:8080/api/v1",
 });
 
-/**
- * AI 스토리 초안 생성을 요청합니다.
- * @param {object} payload - 사용자가 입력한 스토리 데이터
- * @returns {Promise} - Axios 응답 Promise
- */
-export const generateDraft = (payload) => {
-  // return apiClient.post('/stories/draft', payload);
-  console.log('API 요청: AI 초안 생성', payload);
-  // 실제 구현 전까지는 성공을 가정하고 Promise를 반환합니다.
-  return Promise.resolve({
-    data: {
-      text: '서버로부터 받은 AI 초안 텍스트입니다.'
-    }
+
+// /**
+//  * AI 스토리 초안 생성을 요청합니다.
+//  * @param {object} payload - 사용자가 입력한 스토리 데이터
+//  * @returns {Promise} - Axios 응답 Promise
+//  */
+// export const generateDraft = (payload) => {
+//   // return restApi.post('/api/v1/stories/draft', payload);
+//   console.log('API 요청: AI 초안 생성', payload);
+//   // 실제 구현 전까지는 성공을 가정하고 Promise를 반환합니다.
+//   return Promise.resolve({
+//     data: {
+//       text: '서버로부터 받은 AI 초안 텍스트입니다.'
+//     }
+//   });
+// };
+
+// /**
+//  * 최종 수정된 스토리를 서버에 저장합니다.
+//  * @param {object} finalStory - 사용자가 수정한 최종 스토리 데이터
+//  * @returns {Promise} - Axios 응답 Promise
+//  */
+// export const saveStory = (finalStory) => {
+//   // return restApi.post('/stories', finalStory);
+//   console.log('API 요청: 최종 스토리 저장', finalStory);
+//   // 실제 구현 전까지는 성공을 가정하고 Promise를 반환합니다.
+//   return Promise.resolve({
+//     data: {
+//       storyId: `S-${Date.now()}`
+//     }
+//   });
+// };
+// 1. AI 글 생성 요청
+export const generateAiStoryApi = async (storyData) => {
+  // Pinia store의 reactive 객체를 직접 변경하지 않도록 깊은 복사
+  const transformedStoryData = JSON.parse(JSON.stringify(storyData));
+
+  // 이미지 URL 배열을 순수한 문자열 URL 배열로 변환
+  transformedStoryData.storyDays.forEach(day => {
+    day.sections.forEach(section => {
+      // selectedTags를 atmosphereTags로 변경 (백엔드 DTO와 일치)
+      if (section.selectedTags) {
+        section.atmosphereTags = section.selectedTags;
+        delete section.selectedTags;
+      }
+
+      if (section.imageUrls && Array.isArray(section.imageUrls)) {
+        section.imageUrls = section.imageUrls
+          .filter(image => !image.isUploading && !image.error) // 업로드 중이거나 에러난 이미지는 제외
+          .map(image => image.url); // URL 문자열만 추출
+      } else {
+        section.imageUrls = []; // 배열이 아니거나 없으면 빈 배열로 초기화
+      }
+    });
   });
+
+  // 백엔드: StoryController의 @PostMapping("/stories/ai-generate")
+  const response = await restApi.post("/stories/ai-generate", transformedStoryData);
+  return response.data.data; // ApiResponse 구조에 따라 .data.data
 };
 
-/**
- * 최종 수정된 스토리를 서버에 저장합니다.
- * @param {object} finalStory - 사용자가 수정한 최종 스토리 데이터
- * @returns {Promise} - Axios 응답 Promise
- */
-export const saveStory = (finalStory) => {
-  // return apiClient.post('/stories', finalStory);
-  console.log('API 요청: 최종 스토리 저장', finalStory);
-  // 실제 구현 전까지는 성공을 가정하고 Promise를 반환합니다.
-  return Promise.resolve({
-    data: {
-      storyId: `S-${Date.now()}`
-    }
-  });
+// 2. 최종 저장 요청
+export const saveStoryApi = async (finalData) => {
+  // 백엔드: StoryController의 @PostMapping("/stories")
+  const response = await restApi.post("/stories", finalData);
+  return response.data.data;
 };
-
 /**
  * 저장된 스토리를 ID로 조회합니다.
  * @param {string} storyId - 조회할 스토리의 ID
  * @returns {Promise} - Axios 응답 Promise
  */
 export const getStoryById = (storyId) => {
-  // return apiClient.get(`/stories/${storyId}`);
+  // return apiClient.get(`/api/v1/stories/${storyId}`);
   console.log('API 요청: 스토리 조회', storyId);
   // 실제 구현 전까지는 성공을 가정하고 더미 데이터를 담은 Promise를 반환합니다.
   return Promise.resolve({

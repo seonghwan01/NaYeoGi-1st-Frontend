@@ -25,14 +25,31 @@
 
         <div class="d-flex gap-3 overflow-auto pb-2 image-scroll-container">
           <div
-            v-for="(img, idx) in previewImages"
-            :key="idx"
+            v-for="(image, idx) in sectionData.imageUrls"
+            :key="image.id"
             class="flex-shrink-0 position-relative image-card"
-            @click="$emit('preview-image', img)"
+            @click="!image.isUploading && $emit('preview-image', image.url)"
           >
-            <img :src="img" class="rounded shadow-sm w-100 h-100 object-fit-cover">
+            <img 
+              :src="image.url" 
+              class="rounded shadow-sm w-100 h-100 object-fit-cover"
+              :class="{ 'deleting': image.isDeleting }"
+            >
 
+            <!-- 업로드 중 오버레이 -->
+            <div v-if="image.isUploading" class="state-overlay uploading">
+              <div class="spinner-border spinner-border-sm text-white" role="status"></div>
+              <span class="ms-2 small">업로드 중</span>
+            </div>
+
+            <!-- 삭제 중 오버레이 -->
+            <div v-if="image.isDeleting" class="state-overlay deleting">
+              <span class="small">삭제 중...</span>
+            </div>
+
+            <!-- 삭제 버튼 -->
             <button
+              v-if="!image.isUploading && !image.isDeleting"
               class="delete-btn position-absolute top-0 end-0 m-2 d-flex justify-content-center align-items-center shadow-sm"
               @click.stop="removeImage(idx)"
             >
@@ -40,8 +57,9 @@
             </button>
           </div>
 
+          <!-- 사진 추가 버튼 -->
           <div
-            v-if="previewImages.length < MAX_IMAGES"
+            v-if="!sectionData.imageUrls || sectionData.imageUrls.length < MAX_IMAGES"
             class="flex-shrink-0 image-card add-card rounded border border-2 border-dashed d-flex flex-column justify-content-center align-items-center text-muted cursor-pointer"
             @click="triggerFileInput"
           >
@@ -109,57 +127,43 @@ const props = defineProps({
   sectionData: Object, // 부모로부터 받은 섹션 데이터
   index: Number
 });
-const emit = defineEmits(['remove-section', 'update-images', 'update-memo', 'toggle-tag', 'update-place-name', 'preview-image']);
+const emit = defineEmits([
+  'remove-section', 
+  'add-images', 
+  'remove-image', 
+  'update-memo', 
+  'toggle-tag', 
+  'update-place-name', 
+  'preview-image'
+]);
 
-const MAX_IMAGES = 5; // 최대 5장
+const MAX_IMAGES = 5;
 const fileInput = ref(null);
-
 const isExpanded = ref(false);
-const limitCount = 10; // 처음에 10개만 보여줌
-const allMoodTags = MOOD_TAGS; // import 해서 사용
+const limitCount = 10;
+const allMoodTags = MOOD_TAGS;
 const displayedTags = computed(() => {
   return isExpanded.value ? allMoodTags : allMoodTags.slice(0, limitCount);
 });
 
-/**
- * [기능] 이미지 미리보기 URL 생성
- * [설명] File 객체인 경우 URL.createObjectURL을 사용하고,
- * 백엔드 URL인 경우(문자열) 그대로 사용하도록 처리
- */
-const previewImages = computed(() => {
-  return (props.sectionData.images || []).map(file => {
-      // 백엔드에서 받은 URL 문자열일 경우 그대로 반환
-      if (typeof file === 'string') return file;
-      return URL.createObjectURL(file);
-  });
-});
 const triggerFileInput = () => fileInput.value.click();
 
-
-/**
- * [기능] 파일 추가 핸들러
- * [TODO: Backend] 여기서 선택된 파일들을 바로 서버에 업로드할지(비동기),
- * 아니면 최종 저장 시 한번에 보낼지 결정 필요.
- * 보통은 여기서 `FormData`로 서버에 보내고 URL을 받아오는 방식이 권장됨.
- */
 const handleFileAdd = (event) => {
   const newFiles = Array.from(event.target.files);
-  const currentFiles = props.sectionData.images || [];
+  const currentFiles = props.sectionData.imageUrls || [];
 
   if (currentFiles.length + newFiles.length > MAX_IMAGES) {
-    alert(`사진은 장소당 최대 ${MAX_IMAGES}장까지만 선택할 수 있어요! 핵심 사진만 골라주세요. 😉`);
+    alert(`사진은 장소당 최대 ${MAX_IMAGES}장까지만 추가할 수 있습니다.`);
     event.target.value = '';
     return;
   }
-// 현재는 File 객체 배열을 상위로 전달
-  emit('update-images', [...currentFiles, ...newFiles]);
+  
+  emit('add-images', newFiles);
   event.target.value = '';
 };
 
 const removeImage = (idx) => {
-  const currentFiles = [...props.sectionData.images];
-  currentFiles.splice(idx, 1);
-  emit('update-images', currentFiles);
+  emit('remove-image', idx);
 };
 </script>
 
@@ -168,24 +172,40 @@ const removeImage = (idx) => {
 .image-scroll-container::-webkit-scrollbar-thumb { background: #dee2e6; border-radius: 10px; }
 
 .image-card {
-  width: 160px; /* 크기 약간 조절 */
+  width: 160px;
   height: 120px;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all 0.2s ease;
+  overflow: hidden; /* 오버레이를 카드 내부에 가두기 위함 */
 }
 .image-card:hover { transform: scale(1.02); }
+.image-card img.deleting {
+  filter: brightness(0.8);
+}
 
-/* 삭제 버튼 스타일링 (명확하게) */
+.state-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  background-color: rgba(0,0,0,0.5);
+  border-radius: var(--bs-border-radius);
+}
+
+/* 삭제 버튼 스타일링 */
 .delete-btn {
   width: 24px;
   height: 24px;
-  background-color: #dc3545; /* Bootstrap Danger Red */
-  border: 2px solid white;
-  border-radius: 50%; /* 완전 동그라미 */
+  background-color: rgba(0,0,0,0.4);
+  border: none;
+  border-radius: 50%;
   transition: all 0.2s;
 }
 .delete-btn:hover {
-  background-color: #bb2d3b;
+  background-color: #dc3545;
   transform: scale(1.1);
 }
 

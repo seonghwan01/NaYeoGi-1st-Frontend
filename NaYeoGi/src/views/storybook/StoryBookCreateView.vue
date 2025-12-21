@@ -19,7 +19,7 @@
         <div class="card-body p-4 bg-white rounded">
           <div class="mb-4">
             <label class="form-label fw-bold text-dark">🏷️ 여행 제목</label>
-            <input type="text" class="form-control form-control-lg bg-light border-0" v-model="storyTitle" placeholder="예: 3대가 함께한 우당탕탕 제주 여행">
+            <input type="text" class="form-control form-control-lg bg-light border-0" v-model="currentStory.storyTitle" placeholder="예: 3대가 함께한 우당탕탕 제주 여행">
           </div>
           <div class="mb-4">
             <label class="form-label fw-bold text-dark mb-2">🗓️ 여행 기간</label>
@@ -32,29 +32,29 @@
           <div class="mb-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
                <label class="form-label fw-bold text-dark mb-0">👥 누구와 함께했나요?</label>
-               <span class="small text-muted" v-if="whoWith.length > 0">{{ whoWith.map(id => getLabel(COMPANIONS, id)).join(', ') }}</span>
+               <span class="small text-muted" v-if="currentStory.companions.length > 0">{{ currentStory.companions.map(id => getLabel(COMPANIONS, id)).join(', ') }}</span>
             </div>
             <div class="d-flex flex-wrap gap-2">
-               <button v-for="c in COMPANIONS" :key="c.id" class="btn btn-sm rounded-pill px-3 py-2 transition-btn" :class="whoWith.includes(c.id) ? 'btn-dark' : 'btn-outline-secondary border-0 bg-light text-secondary'" @click="toggleSelection(whoWith, c.id)">{{ c.label }}</button>
+               <button v-for="c in COMPANIONS" :key="c.id" class="btn btn-sm rounded-pill px-3 py-2 transition-btn" :class="currentStory.companions.includes(c.id) ? 'btn-dark' : 'btn-outline-secondary border-0 bg-light text-secondary'" @click="toggleSelection(currentStory.companions, c.id)">{{ c.label }}</button>
             </div>
           </div>
           <div class="mb-2">
              <div class="d-flex justify-content-between align-items-center mb-2">
                <label class="form-label fw-bold text-dark mb-0">🎨 전체적인 글 분위기 <span class="text-primary small">(최대 3개)</span></label>
-               <span class="small text-muted" v-if="selectedTones.length > 0">{{ selectedTones.map(id => getLabel(STORY_TONES, id)).join(', ') }}</span>
+               <span class="small text-muted" v-if="currentStory.tones.length > 0">{{ currentStory.tones.map(id => getLabel(STORY_TONES, id)).join(', ') }}</span>
              </div>
              <div class="d-flex flex-wrap gap-2">
-               <button v-for="t in displayedTones" :key="t.id" class="btn btn-sm rounded-pill px-3 py-2 d-flex align-items-center gap-2 transition-btn" :class="selectedTones.includes(t.id) ? 'btn-primary shadow-sm' : 'btn-outline-secondary border-0 bg-light text-secondary'" @click="toggleSelection(selectedTones, t.id, 3)"><span>{{ t.icon }}</span><span>{{ t.label }}</span></button>
+               <button v-for="t in displayedTones" :key="t.id" class="btn btn-sm rounded-pill px-3 py-2 d-flex align-items-center gap-2 transition-btn" :class="currentStory.tones.includes(t.id) ? 'btn-primary shadow-sm' : 'btn-outline-secondary border-0 bg-light text-secondary'" @click="toggleSelection(currentStory.tones, t.id, 3)"><span>{{ t.icon }}</span><span>{{ t.label }}</span></button>
                <button v-if="STORY_TONES.length > limitCount" class="btn btn-sm btn-link text-decoration-none text-muted fw-bold" @click="isExpanded = !isExpanded">{{ isExpanded ? '접기 ▲' : '+ 더보기' }}</button>
              </div>
           </div>
         </div>
       </div>
 
-      <div v-if="planStore.isLoading && !storyDays.length" class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>
+      <div v-if="planStore.isLoading && !currentStory.storyDays.length" class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>
 
       <div v-else>
-        <div v-for="(dayItem, dayIndex) in storyDays" :key="dayIndex" class="card mb-5 border-0 shadow-sm bg-light">
+        <div v-for="(dayItem, dayIndex) in currentStory.storyDays" :key="dayIndex" class="card mb-5 border-0 shadow-sm bg-light">
 
           <div
             class="card-header bg-white border-bottom-0 p-4 rounded-top"
@@ -108,7 +108,8 @@
                 :index="secIndex"
                 :sectionData="section"
                 @remove-section="removeSection(dayIndex, secIndex)"
-                @update-images="(files) => section.images = files"
+                @add-images="(files) => handleImageUpload(dayIndex, secIndex, files)"
+                @remove-image="(imageIndex) => handleImageDelete(dayIndex, secIndex, imageIndex)"
                 @update-memo="(text) => section.memo = text"
                 @update-place-name="(text) => section.placeName = text"
                 @toggle-tag="(tag) => toggleTag(section, tag)"
@@ -122,7 +123,7 @@
                       :value="dayIndex"
                       @change="(e) => moveSectionToDay(dayIndex, secIndex, parseInt(e.target.value))"
                     >
-                      <option v-for="(d, idx) in storyDays" :key="idx" :value="idx">Day {{ d.dayNum }}</option>
+                      <option v-for="(d, idx) in currentStory.storyDays" :key="idx" :value="idx">Day {{ d.dayNum }}</option>
                     </select>
                   </div>
                 </template>
@@ -153,11 +154,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, toRef } from 'vue';
+import { storeToRefs } from 'pinia';
 import StorySection from '@/components/storybook/StorySection.vue';
 import ContentCard from '@/components/common/ContentCard.vue';
 import { useStorybookStore } from '@/stores/storybook';
-import { usePlanStore } from '@/stores/plan'; // 1. Plan 스토어 임포트
+import { usePlanStore } from '@/stores/plan';
 import { useDraggable } from '@/composables/useDraggable';
 import {
   WEATHER_TAGS,
@@ -175,19 +177,17 @@ const props = defineProps({
 
 const storybookStore = useStorybookStore();
 const planStore = usePlanStore();
+const { currentStory } = storeToRefs(storybookStore);
+const { selectedPlanDetails } = storeToRefs(planStore);
 
-// --- 컴포넌트 상태 변수 ---
-const storyTitle = ref('');
-const whoWith = ref(['friends']);
-const selectedTones = ref(['calm']);
+
+// --- UI 전용 상태 변수 ---
 const modalImage = ref(null);
 const isExpanded = ref(false);
 const limitCount = 8;
-const storyDays = ref([]);
-const startDate = ref('');
-const endDate = ref('');
 
 // --- 드래그 앤 드롭 로직 ---
+const storyDaysRef = toRef(currentStory.value, 'storyDays');
 const {
   isDragEnabled,
   isDragging,
@@ -198,97 +198,130 @@ const {
   onDragEnter,
   onDrop,
   onDragEnd,
-} = useDraggable(storyDays);
+} = useDraggable(storyDaysRef);
+
 
 // --- Computed 속성 ---
+// props.planId를 기반으로 planStore의 plans 목록에서 실시간으로 기본 정보를 찾아옴
+const selectedPlan = computed(() => planStore.getPlanByIdFromList(props.planId));
+
 const formattedDate = computed(() => {
-  if (!startDate.value || !endDate.value) return '';
-  return `${startDate.value.replaceAll('-', '.')} ~ ${endDate.value.replaceAll('-', '.')}`;
+  if (!currentStory.value.startDate || !currentStory.value.endDate) return '';
+  return `${currentStory.value.startDate.replaceAll('-', '.')} ~ ${currentStory.value.endDate.replaceAll('-', '.')}`;
 });
 const durationLabel = computed(() => {
-  if (!startDate.value || !endDate.value) return '';
-  const s = new Date(startDate.value), e = new Date(endDate.value);
+  if (!currentStory.value.startDate || !currentStory.value.endDate) return '';
+  const s = new Date(currentStory.value.startDate), e = new Date(currentStory.value.endDate);
   const diffDays = Math.ceil(Math.abs(e - s) / (1000 * 60 * 60 * 24));
   return `${diffDays}박 ${diffDays + 1}일`;
 });
 const seasonLabel = computed(() => '가을'); // 간략화
 const displayedTones = computed(() => isExpanded.value ? STORY_TONES : STORY_TONES.slice(0, limitCount));
 
+// --- 이미지 핸들러 ---
+const handleImageUpload = (dayIndex, sectionIndex, files) => {
+  storybookStore.uploadImagesToSection(dayIndex, sectionIndex, files);
+};
+const handleImageDelete = (dayIndex, sectionIndex, imageIndex) => {
+  storybookStore.removeImageFromSection(dayIndex, sectionIndex, imageIndex);
+};
+
 // --- 함수 ---
 const getLabel = (l, id) => l.find(i => i.id === id)?.label || '';
 const getDayOfWeek = (d) => ['일', '월', '화', '수', '목', '금', '토'][new Date(d).getDay()] + '요일';
-const toggleSelection = (l, i, m = -1) => { if (l.includes(i)) l.splice(l.indexOf(i), 1); else { if (m > 0 && l.length >= m) return alert(`최대 ${m}개!`); l.push(i); } };
+const toggleSelection = (list, item, max = -1) => {
+  const index = list.indexOf(item);
+  if (index > -1) {
+    list.splice(index, 1);
+  } else {
+    if (max > 0 && list.length >= max) {
+      return alert(`최대 ${max}개 선택 가능합니다.`);
+    }
+    list.push(item);
+  }
+};
 const toggleTag = (s, t) => { if (s.selectedTags.includes(t)) s.selectedTags = s.selectedTags.filter(x => x !== t); else { if (s.selectedTags.length >= 10) return alert("최대 10개!"); s.selectedTags.push(t); } };
-const moveSectionToDay = (f, s, t) => { if (f === t) return; const i = storyDays.value[f].sections[s]; storyDays.value[f].sections.splice(s, 1); storyDays.value[t].sections.push(i); };
-const addSectionToDay = (i) => storyDays.value[i].sections.push({ id: Date.now(), placeName: '', images: [], selectedTags: [], memo: '' });
-const removeSection = (d, s) => { if (confirm('삭제하시겠습니까?')) storyDays.value[d].sections.splice(s, 1); };
+const moveSectionToDay = (fromDayIdx, fromSecIdx, toDayIdx) => {
+  if (fromDayIdx === toDayIdx) return;
+  const section = currentStory.value.storyDays[fromDayIdx].sections.splice(fromSecIdx, 1)[0];
+  currentStory.value.storyDays[toDayIdx].sections.push(section);
+};
+const addSectionToDay = (dayIndex) => {
+  currentStory.value.storyDays[dayIndex].sections.push({ id: Date.now(), placeName: '', imageUrls: [], selectedTags: [], memo: '' });
+};
+const removeSection = (dayIndex, sectionIndex) => {
+  if (confirm('이 장소를 삭제하시겠습니까?')) {
+    currentStory.value.storyDays[dayIndex].sections.splice(sectionIndex, 1);
+  }
+};
 const saveTemp = () => alert('임시 저장 기능은 구현 예정입니다.');
 
 const generateStory = async () => {
-  if (!storyTitle.value) return alert('여행 제목을 입력해주세요!');
-  const payload = {
-    storyTitle: storyTitle.value,
-    startDate: startDate.value,
-    endDate: endDate.value,
-    companions: whoWith.value,
-    tones: selectedTones.value,
-    storyDays: storyDays.value,
-  };
-  await storybookStore.generateStoryDraft(payload);
+  if (!currentStory.value.storyTitle) {
+    return alert('여행 제목을 입력해주세요!');
+  }
+  await storybookStore.generateStoryDraft();
 };
 
 const closeImageModal = () => modalImage.value = null;
 const openImageModal = (u) => modalImage.value = u;
 
 // --- 데이터 로딩 및 매핑 ---
-onMounted(() => {
-  // 2. 컴포넌트가 마운트되면 planId로 데이터 요청
-  planStore.fetchPlan(props.planId);
+onMounted(async () => {
+  storybookStore.resetCurrentStory();
+  planStore.clearPlanDetails();
+
+  if (props.planId) {
+    // MyPage를 거치지 않았을 경우를 대비해 전체 목록 호출 (내부적으로 중복 호출 방지)
+    await planStore.fetchAllPlans();
+    // 이 페이지에서는 상세 정보만 API로 호출
+    await planStore.fetchPlanDetails(props.planId);
+  }
 });
 
-// 3. planStore의 currentPlan 상태가 변경되면(로딩 완료) 감지하여 실행
-watch(() => planStore.currentPlan, (newPlan) => {
-  if (newPlan) {
-    // 4. 불러온 데이터를 컴포넌트의 상태에 맞게 매핑
-    storyTitle.value = newPlan.title;
-    startDate.value = newPlan.startDate;
-    endDate.value = newPlan.endDate;
+// 스토어에서 가져온 기본 정보(selectedPlan)와 상세 정보(selectedPlanDetails)를 감시하여 데이터 조합
+watch([selectedPlan, selectedPlanDetails], ([newPlan, newDetails]) => {
+  if (newPlan && newDetails && newDetails.length > 0) {
+    currentStory.value.storyTitle = newPlan.title;
+    currentStory.value.startDate = newPlan.startDate;
+    currentStory.value.endDate = newPlan.endDate;
+    currentStory.value.companions = ['friends']; // 기본값 설정
+    currentStory.value.tones = ['calm'];       // 기본값 설정
 
-    // 날짜 차이 계산
-    const s = new Date(newPlan.startDate);
-    const e = new Date(newPlan.endDate);
-    const diffDays = Math.ceil(Math.abs(e - s) / (1000 * 60 * 60 * 24)) + 1;
+    const startDate = new Date(newPlan.startDate);
+    const endDate = new Date(newPlan.endDate);
+    const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
-    // Day 1, Day 2 ... 기본 구조 생성
     const days = [];
     for (let i = 0; i < diffDays; i++) {
-      const dayDate = new Date(s);
-      dayDate.setDate(s.getDate() + i);
+      const dayDate = new Date(startDate);
+      dayDate.setDate(startDate.getDate() + i);
       days.push({
         dayNum: i + 1,
-        date: dayDate.toISOString().split('T')[0],
-        weather: [],
+        date: dayDate.toISOString().split('T')[0], // YYYY-MM-DD 형식
+        weather: [], // 사용자가 직접 선택
         sections: [],
       });
     }
 
-    // plan.details를 순회하며 각 Day에 맞는 section 추가
-    newPlan.details.forEach(detail => {
-      const dayIndex = detail.planDate - 1;
+    newDetails.forEach(detail => {
+      const dayIndex = detail.plan_date - 1; // plan_date는 1부터 시작
       if (days[dayIndex]) {
         days[dayIndex].sections.push({
-          id: detail.attraction.id, // 고유 ID로 attraction id 사용
-          placeName: detail.attraction.title,
-          images: detail.attraction.firstImage1 ? [detail.attraction.firstImage1] : [],
+          id: detail.attraction_id,
+          placeName: detail.attraction_title,
+          visitOrder: detail.sequence,
+          imageUrls: [],
           selectedTags: [],
           memo: '',
         });
       }
     });
 
-    storyDays.value = days;
+    currentStory.value.storyDays = days;
   }
-}, { immediate: true }); // immediate: true로 초기 로딩 시에도 watch 실행
+}, { deep: true }); // computed 객체와 배열을 감시하기 위해 deep: true 사용
 </script>
 
 <style scoped>

@@ -2,34 +2,20 @@
 import { ref, onMounted } from 'vue';
 import { useStorybookStore } from '@/stores/storybook';
 import { useRouter } from 'vue-router';
-import { QuillEditor } from '@vueup/vue-quill';
+import { Editor } from '@toast-ui/vue-editor';
 
 const router = useRouter();
 const store = useStorybookStore();
+const editorRef = ref(null);
 
-// 로컬 상태: title과 content(HTML 문자열)를 가짐
+// 로컬 상태: title과 content(이제 Markdown)를 가짐
 const draft = ref({ title: '', content: '' });
-
-// Quill 에디터 옵션
-const editorOptions = {
-  theme: 'snow',
-  modules: {
-    toolbar: [
-      [{ 'header': [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      ['link', 'image'],
-      ['clean']
-    ]
-  },
-  placeholder: '여기에 스토리를 작성하세요...'
-};
 
 onMounted(() => {
   if (store.storyDraft) {
     draft.value.title = store.storyDraft.title || '';
-    // Quill 에디터는 v-model:content를 통해 내용을 바인딩하므로,
-    // 스토어의 content를 직접 ref에 할당합니다.
+    // TUI 에디터는 v-model을 통해 내용을 바인딩하므로,
+    // 스토어의 content(Markdown)를 직접 ref에 할당합니다.
     draft.value.content = store.storyDraft.content || '';
   } else {
     alert('수정할 스토리 초안이 없습니다. 생성 페이지로 돌아갑니다.');
@@ -38,8 +24,16 @@ onMounted(() => {
 });
 
 const handleSave = () => {
-  // 현재 draft 객체 전체를 저장 액션에 전달
-  store.saveFinalStory(draft.value);
+  // TUI 에디터 인스턴스에서 HTML 컨텐츠 가져오기
+  const htmlContent = editorRef.value?.invoke('getHTML');
+  
+  // 스토어에 저장할 최종 데이터 객체
+  const finalStory = {
+    title: draft.value.title,
+    content: htmlContent,
+  };
+
+  store.saveFinalStory(finalStory);
 };
 </script>
 
@@ -60,13 +54,14 @@ const handleSave = () => {
       <!-- 제목 입력란 -->
       <input type="text" class="form-control form-control-lg border-0 fw-bold fs-1 mb-4 px-2" v-model="draft.title" placeholder="제목을 입력하세요">
 
-      <!-- Quill 에디터 -->
-      <div class="quill-editor-container">
-        <QuillEditor
-          v-model:content="draft.content"
-          :options="editorOptions"
-          contentType="html"
-          style="min-height: 500px;"
+      <!-- Toast UI 에디터 -->
+      <div class="tui-editor-container">
+        <Editor
+          ref="editorRef"
+          v-model="draft.content"
+          initialEditType="wysiwyg"
+          height="500px"
+          previewStyle="vertical"
         />
       </div>
     </div>
@@ -89,19 +84,10 @@ const handleSave = () => {
 </template>
 
 <style>
-/* Quill 에디터의 툴바와 편집 영역이 카드 안에서 잘 보이도록 스타일 조정 */
-.quill-editor-container .ql-toolbar.ql-snow {
-  border-radius: 0.5rem 0.5rem 0 0;
+/* TUI 에디터 컨테이너 스타일 */
+.tui-editor-container {
   border: 1px solid #dee2e6;
-  border-bottom: 0;
-}
-.quill-editor-container .ql-container.ql-snow {
-  border-radius: 0 0 0.5rem 0.5rem;
-  border: 1px solid #dee2e6;
-  font-size: 16px; /* 편집기 내부 폰트 크기 조정 */
-}
-.quill-editor-container .ql-editor {
-  min-height: 500px; /* 최소 높이 설정 */
+  border-radius: 0.5rem;
 }
 
 .loading-overlay {
