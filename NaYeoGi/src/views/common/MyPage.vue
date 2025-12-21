@@ -158,6 +158,10 @@ const goToPlanBuilder = () => {
   router.push({ name: 'attraction-select' })
 }
 
+const goToStoryCreate = (planId) => {
+  router.push(`/storybook/create/${planId}`);
+}
+
 const startEditPlan = (plan) => {
   editingPlanId.value = plan.id
   planSaveError.value = ''
@@ -415,6 +419,12 @@ const fetchMyPlans = async () => {
                         @click="startEditPlan(plan)"
                       >
                         수정
+                      </button>
+                      <button
+                        class="btn btn-primary btn-sm"
+                        @click="goToStoryCreate(plan.id)"
+                      >
+                        스토리 생성 ✨
                       </button>
                     </div>
                     <div

@@ -117,7 +117,7 @@ import { generateAiStoryApi, saveStoryApi, getStoryById } from "@/restapi/storyb
   }
 
   function addSection(dayIndex) {
-    currentStory.days[dayIndex].sections.push({
+    currentStory.storyDays[dayIndex].sections.push({
       placeName: "",
       weather: "",      // 빈 값으로 초기화
       atmosphere: "",   // 빈 값으로 초기화
@@ -125,6 +125,72 @@ import { generateAiStoryApi, saveStoryApi, getStoryById } from "@/restapi/storyb
       imageUrls: []
     });
   }
+
+  // 날짜 계산 헬퍼 함수
+  function calculateDate(startDate, dayOffset) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + dayOffset);
+    // YYYY-MM-DD 형식으로 반환
+    return date.toISOString().split('T')[0];
+  }
+
+  /**
+   * Plan 데이터와 동기화하여 Storybook의 기본 구조를 생성합니다.
+   * @param {object} plan - planStore.selectedPlan에서 받아온 계획 객체
+   */
+  function syncWithPlanData(plan) {
+    if (!plan || !plan.startDate || !plan.endDate) {
+      console.error("동기화할 Plan 데이터가 올바르지 않습니다. (날짜 정보 누락)");
+      resetCurrentStory();
+      return;
+    }
+
+    // 1. 기본 정보 설정
+    currentStory.storyTitle = `${plan.title}의 기록`;
+    currentStory.startDate = plan.startDate;
+    currentStory.endDate = plan.endDate;
+    currentStory.companions = []; // 기본값 초기화
+    currentStory.tones = []; // 기본값 초기화
+
+    // 2. 여행 기간 계산 및 모든 일차의 빈 템플릿 생성
+    const startDate = new Date(plan.startDate);
+    const endDate = new Date(plan.endDate);
+    const tripDuration = Math.ceil(Math.abs(endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+
+    const allDays = [];
+    for (let i = 0; i < tripDuration; i++) {
+        allDays.push({
+            dayNum: i + 1,
+            date: calculateDate(plan.startDate, i),
+            weather: [],
+            sections: []
+        });
+    }
+
+    // 3. 방문지 데이터를 미리 만들어 둔 일차 템플릿에 주입
+    if (plan.details && plan.details.length > 0) {
+        plan.details.forEach(detail => {
+            // planDate는 1부터 시작하므로, 배열 인덱스를 위해 -1
+            const dayIndex = detail.planDate - 1;
+            if (dayIndex >= 0 && dayIndex < allDays.length) {
+                allDays[dayIndex].sections.push({
+                    id: detail.attraction.id, // v-for를 위한 고유 key
+                    placeName: detail.attraction.title,
+                    visitOrder: detail.sequence,
+                    weather: "",
+                    atmosphere: "",
+                    content: "",
+                    imageUrls: [],
+                    selectedTags: [],
+                });
+            }
+        });
+    }
+
+    // 4. 최종 데이터를 currentStory에 할당
+    currentStory.storyDays = allDays;
+  }
+  
   async function generateStoryDraft() {
     isLoading.value = true;
     storyDraft.value = null; // 초기화
@@ -201,6 +267,7 @@ import { generateAiStoryApi, saveStoryApi, getStoryById } from "@/restapi/storyb
     uploadImagesToSection,
     removeImageFromSection,
     addSection,
+    syncWithPlanData,
     generateStoryDraft,
     saveFinalStory,
     fetchStory,

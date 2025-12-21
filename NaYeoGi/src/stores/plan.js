@@ -1,33 +1,31 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { getPlanById } from '@/restapi/plan';
+import { getPlanDetails, getMyPlans } from '@/restapi/plan';
 
 export const usePlanStore = defineStore('plan', () => {
   // --- 상태(State) ---
-
-  // 현재 로드된 여행 계획 데이터를 저장
-  const currentPlan = ref(null);
-  // 데이터를 로딩 중인지 여부
   const isLoading = ref(false);
-  // 에러 발생 시 에러 메시지 저장
   const error = ref(null);
+
+  // 사용자의 전체 여행 계획 목록
+  const myPlans = ref([]);
+
+  // 현재 선택되었거나 상세 정보가 조회된 단일 여행 계획
+  const selectedPlan = ref(null);
 
   // --- 액션(Actions) ---
 
   /**
-   * ID로 특정 여행 계획을 서버에서 가져와 상태를 업데이트합니다.
-   * @param {string | number} planId - 조회할 여행 계획의 ID
+   * 사용자의 모든 여행 계획 목록을 가져옵니다.
    */
-  async function fetchPlan(planId) {
+  async function fetchMyPlans(memberId) {
     isLoading.value = true;
-    currentPlan.value = null;
     error.value = null;
-
     try {
-      const response = await getPlanById(planId);
-      currentPlan.value = response.data;
+      const response = await getMyPlans(memberId);
+      myPlans.value = response.data;
     } catch (err) {
-      console.error(`Failed to fetch plan ${planId}:`, err);
+      console.error('나의 여행 계획 목록 조회 실패:', err);
       error.value = err;
     } finally {
       isLoading.value = false;
@@ -35,17 +33,33 @@ export const usePlanStore = defineStore('plan', () => {
   }
 
   /**
-   * 현재 저장된 여행 계획 데이터를 초기화합니다.
+   * ID로 특정 여행 계획의 상세 정보를 가져와 상태를 업데이트합니다.
+   * @param {string | number} planId - 조회할 여행 계획의 ID
    */
-  function clearCurrentPlan() {
-    currentPlan.value = null;
+  async function fetchPlanDetails(planId) {
+    isLoading.value = true;
+    selectedPlan.value = null;
+    error.value = null;
+
+    try {
+      const response = await getPlanDetails(planId);
+      // 백엔드 응답이 ApiResponseDto로 래핑되어 있으므로, 실제 데이터는 .data.data에 존재
+      selectedPlan.value = response.data.data;
+    } catch (err) {
+      console.error(`Failed to fetch plan ${planId}:`, err);
+      error.value = err;
+      throw err; // 상위 컴포넌트에서 에러를 처리할 수 있도록 throw
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   return {
-    currentPlan,
     isLoading,
     error,
-    fetchPlan,
-    clearCurrentPlan,
+    myPlans,
+    selectedPlan,
+    fetchMyPlans,
+    fetchPlanDetails
   };
 });
