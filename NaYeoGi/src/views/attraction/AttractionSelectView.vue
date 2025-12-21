@@ -124,16 +124,24 @@ import ContentCard from '@/components/common/ContentCard.vue';
 const router = useRouter()
 const attractionStore = useAttractionStore()
 const tabs = attractionStore.tabs
-const { recommendations, displayedAttractions, selectedAttractions, selectedId, activeTab } =
-  storeToRefs(attractionStore)
+const {
+  recommendations,
+  displayedAttractions,
+  selectedAttractions,
+  selectedId,
+  activeTab,
+  selectedRegion,
+  selectedTopics,
+  isRecommending
+} = storeToRefs(attractionStore)
 const {
   clearSelections,
   isSelected,
   removeSelection,
   resolveCategoryLabel,
-  setActiveTab,
   setSelectedId,
-  toggleSelection
+  toggleSelection,
+  fetchRecommendationsForTab
 } = attractionStore
 
 const mapContainer = ref(null)
@@ -185,10 +193,15 @@ const showAllMarkers = () => {
   renderAllMarkers(window.kakao)
 }
 
-const switchTab = (key) => {
-  setActiveTab(key)
-  if (window.kakao?.maps) {
-    renderAllMarkers(window.kakao)
+const switchTab = async (key) => {
+  if (isRecommending.value) return
+  try {
+    await fetchRecommendationsForTab({ tabKey: key })
+    if (window.kakao?.maps) {
+      renderAllMarkers(window.kakao)
+    }
+  } catch (error) {
+    console.error(error)
   }
 }
 
@@ -205,8 +218,11 @@ const initMap = async () => {
 watch(
   recommendations,
   (newVal) => {
+    if (isRecommending.value) return
     if (newVal.length === 0) {
-      router.replace({ name: 'attraction-recommend' })
+      if (!selectedRegion.value || selectedTopics.value.length === 0) {
+        router.replace({ name: 'attraction-recommend' })
+      }
       return
     }
     if (mapInstance.value && window.kakao?.maps) {
@@ -228,8 +244,17 @@ watch(
 
 onMounted(async () => {
   if (recommendations.value.length === 0) {
-    router.replace({ name: 'attraction-recommend' })
-    return
+    if (!selectedRegion.value || selectedTopics.value.length === 0) {
+      router.replace({ name: 'attraction-recommend' })
+      return
+    }
+    try {
+      await fetchRecommendationsForTab({ tabKey: activeTab.value })
+    } catch (error) {
+      console.error(error)
+      router.replace({ name: 'attraction-recommend' })
+      return
+    }
   }
   await initMap()
 })

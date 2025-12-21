@@ -1,6 +1,9 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { requestSurveyOptions, requestAttractionRecommendation } from '@/restapi/attraction'
+import {
+  requestSurveyOptions,
+  requestRecommendationsByContentTypes
+} from '@/restapi/attraction'
 
 const DEFAULT_REGIONS = [
   '서울',
@@ -43,6 +46,8 @@ const TABS = [
   { key: 'shopping', label: '쇼핑', types: [38] }
 ]
 
+const DEFAULT_TAB_KEY = TABS[0].key
+
 export const useAttractionStore = defineStore('attraction', () => {
   const regions = ref(DEFAULT_REGIONS)
   const topics = ref([])
@@ -55,7 +60,7 @@ export const useAttractionStore = defineStore('attraction', () => {
   const isRecommending = ref(false)
   const selectedAttractions = ref([])
   const selectedId = ref(null)
-  const activeTab = ref(TABS[0].key)
+  const activeTab = ref(DEFAULT_TAB_KEY)
 
   const selectRegion = (region) => {
     selectedRegion.value = region
@@ -110,16 +115,24 @@ export const useAttractionStore = defineStore('attraction', () => {
     selectedId.value = id
   }
 
+  const getContentTypesByTab = (key) => {
+    const tab = TABS.find((item) => item.key === key)
+    return tab?.types ?? []
+  }
+
   const setActiveTab = (key) => {
     const hasTab = TABS.some((tab) => tab.key === key)
-    activeTab.value = hasTab ? key : TABS[0].key
+    activeTab.value = hasTab ? key : DEFAULT_TAB_KEY
     selectedId.value = null
   }
 
-  const resetSelectionState = () => {
-    clearSelections()
-    selectedId.value = null
-    activeTab.value = TABS[0].key
+  const ensureSurveyReady = () => {
+    if (!selectedRegion.value) {
+      throw new Error('지역을 선택해주세요.')
+    }
+    if (!selectedTopics.value.length) {
+      throw new Error('선호 토픽을 선택해주세요.')
+    }
   }
 
   const sortedAttractions = computed(() => {
@@ -132,21 +145,38 @@ export const useAttractionStore = defineStore('attraction', () => {
     return sortedAttractions.value.filter((item) => current.types.includes(Number(item.content_type_id)))
   })
 
-  const recommendAttraction = async () => {
+  const fetchRecommendationsForTab = async ({ tabKey, resetSelections = false } = {}) => {
     recommendationError.value = null
     isRecommending.value = true
-    recommendations.value = []
 
-    const requestBody = {
-      area: selectedRegion.value,
-      surveyIds: selectedTopics.value
+    const targetTabKey = tabKey ?? activeTab.value ?? DEFAULT_TAB_KEY
+    const contentTypeIds = getContentTypesByTab(targetTabKey)
+    if (!contentTypeIds.length) {
+      recommendationError.value = '선택한 탭에 맞는 콘텐츠 타입이 없습니다.'
+      isRecommending.value = false
+      return []
     }
 
     try {
-      const data = await requestAttractionRecommendation(requestBody)
-      recommendations.value = Array.isArray(data) ? data : []
-      resetSelectionState()
-      return data
+      ensureSurveyReady()
+
+      const merged = await requestRecommendationsByContentTypes({
+        area: selectedRegion.value,
+        surveyIds: selectedTopics.value,
+        contentTypeIds
+      })
+
+      const sorted = merged.sort((a, b) => (b.cal_score ?? 0) - (a.cal_score ?? 0))
+
+      recommendations.value = sorted
+      setActiveTab(targetTabKey)
+      selectedId.value = null
+
+      if (resetSelections) {
+        clearSelections()
+      }
+
+      return sorted
     } catch (error) {
       console.error(error)
       recommendationError.value = '추천을 불러오지 못했습니다.'
@@ -156,12 +186,16 @@ export const useAttractionStore = defineStore('attraction', () => {
     }
   }
 
+  // 호환성: 기존 이름 유지
+  const recommendAttraction = (options) => fetchRecommendationsForTab(options)
+
   return {
     loadTopics,
     regions,
     selectedRegion,
     selectRegion,
     selectedTopics,
+    fetchRecommendationsForTab,
     recommendAttraction,
     recommendations,
     recommendationError,

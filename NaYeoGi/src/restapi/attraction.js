@@ -26,6 +26,24 @@ export async function requestAttractionRecommendation(requestBody) {
   return response.json()
 }
 
+export async function requestRecommendationsByContentTypes({ area, surveyIds, contentTypeIds }) {
+  if (!Array.isArray(contentTypeIds) || contentTypeIds.length === 0) {
+    throw new Error('요청할 콘텐츠 타입이 없습니다.')
+  }
+
+  const results = await Promise.all(
+    contentTypeIds.map((contentTypeId) =>
+      requestAttractionRecommendation({
+        area,
+        surveyIds,
+        contentTypeId
+      })
+    )
+  )
+
+  return results.flatMap((item) => (Array.isArray(item) ? item : []))
+}
+
 export async function requestCurrentMember() {
   const response = await fetch('/api/v1/members/me', {
     credentials: 'include',
