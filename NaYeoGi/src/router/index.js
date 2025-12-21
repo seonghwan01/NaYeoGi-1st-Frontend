@@ -52,6 +52,11 @@ const router = createRouter({
       component: () => import('@/views/attraction/AttractionSurveyView.vue'),
     },
     {
+      path: '/attraction/list',
+      name: 'attraction-list',
+      component: () => import('@/views/attraction/AttractionListView.vue'),
+    },
+    {
       path: '/attraction/select',
       name: 'attraction-select',
       component: () => import('@/views/attraction/AttractionSelectView.vue'),

@@ -65,7 +65,7 @@ const router = useRouter()
 const attractionStore = useAttractionStore()
 const { regions, topics, topicError, selectedRegion, selectedTopics, isRecommending, recommendationError } =
   storeToRefs(attractionStore)
-const { loadTopics, selectRegion, toggleTopic, recommendAttraction } = attractionStore
+const { loadTopics, selectRegion, toggleTopic, fetchRecommendationsForTab } = attractionStore
 
 const handleSubmit = async () => {
   if (isRecommending.value) return
@@ -73,7 +73,7 @@ const handleSubmit = async () => {
     return
   }
   try {
-    await recommendAttraction()
+    await fetchRecommendationsForTab({ resetSelections: true })
     router.push({ name: 'attraction-select' })
   } catch (error) {
     console.log('AttractionSelectView호출 중 오류')
