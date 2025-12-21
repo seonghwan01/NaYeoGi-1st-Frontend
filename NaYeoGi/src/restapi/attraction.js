@@ -44,6 +44,27 @@ export async function requestRecommendationsByContentTypes({ area, surveyIds, co
   return results.flatMap((item) => (Array.isArray(item) ? item : []))
 }
 
+export async function requestAttractions({ title, contentTypeIds } = {}) {
+  const params = new URLSearchParams()
+
+  if (title) {
+    params.append('title', title)
+  }
+
+  if (Array.isArray(contentTypeIds)) {
+    contentTypeIds.forEach((id) => params.append('contentTypeId', id))
+  }
+
+  const query = params.toString()
+  const response = await fetch(`/api/v1/attractions${query ? `?${query}` : ''}`)
+
+  if (!response.ok) {
+    throw new Error('여행지를 불러오지 못했습니다.')
+  }
+
+  return response.json()
+}
+
 export async function requestCurrentMember() {
   const response = await fetch('/api/v1/members/me', {
     credentials: 'include',
@@ -74,7 +95,7 @@ export const loadKakaoMaps = () => {
 
     const script = document.createElement('script')
     script.id = MAP_SCRIPT_ID
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey=${KAKAO_APP_KEY}`
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?autoload=false&libraries=clusterer&appkey=${KAKAO_APP_KEY}`
     script.async = true
     script.onload = () => window.kakao.maps.load(() => resolve(window.kakao))
     script.onerror = (err) => reject(err)

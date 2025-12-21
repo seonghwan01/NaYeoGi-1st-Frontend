@@ -2,7 +2,8 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import {
   requestSurveyOptions,
-  requestRecommendationsByContentTypes
+  requestRecommendationsByContentTypes,
+  requestAttractions
 } from '@/restapi/attraction'
 
 const DEFAULT_REGIONS = [
@@ -36,6 +37,18 @@ const CATEGORY_LABELS = {
   38: '쇼핑'
 }
 
+export const ATTRACTION_CATEGORY_GROUPS = [
+  { key: 'attraction', label: '관광지', types: [12], color: '#2563eb' },
+  { key: 'food', label: '식당', types: [39], color: '#16a34a' },
+  { key: 'culture', label: '문화시설', types: [14], color: '#7c3aed' },
+  { key: 'festival', label: '축제/공연/행사', types: [15, 25], color: '#ea580c' },
+  { key: 'leisure', label: '레포츠', types: [28], color: '#0ea5e9' },
+  { key: 'stay', label: '숙박', types: [32], color: '#6366f1' },
+  { key: 'shopping', label: '쇼핑', types: [38], color: '#f59e0b' }
+]
+
+const DEFAULT_CATEGORY_KEY = ATTRACTION_CATEGORY_GROUPS[0].key
+
 const TABS = [
   { key: 'attraction', label: '관광지', types: [12] },
   { key: 'food', label: '식당', types: [39] },
@@ -49,6 +62,12 @@ const TABS = [
 const DEFAULT_TAB_KEY = TABS[0].key
 
 export const useAttractionStore = defineStore('attraction', () => {
+  // 리스트용 상태
+  const attractions = ref([])
+  const attractionsError = ref(null)
+  const attractionsLoading = ref(false)
+  const selectedCategoryKey = ref(DEFAULT_CATEGORY_KEY)
+
   const regions = ref(DEFAULT_REGIONS)
   const topics = ref([])
   const topicError = ref(null)
@@ -92,6 +111,52 @@ export const useAttractionStore = defineStore('attraction', () => {
   }
 
   const resolveCategoryLabel = (typeId) => CATEGORY_LABELS[Number(typeId)] ?? '기타'
+
+  const listActiveCategory = computed(
+    () => ATTRACTION_CATEGORY_GROUPS.find((item) => item.key === selectedCategoryKey.value) ?? ATTRACTION_CATEGORY_GROUPS[0]
+  )
+
+  const listCategoryTypes = computed(() => listActiveCategory.value.types ?? [])
+
+  const syncCategory = ({ categoryKey, typesFromQuery = [] } = {}) => {
+    if (categoryKey) {
+      const matchedByKey = ATTRACTION_CATEGORY_GROUPS.find((item) => item.key === categoryKey)
+      if (matchedByKey) {
+        selectedCategoryKey.value = matchedByKey.key
+        return
+      }
+    }
+
+    if (typesFromQuery.length) {
+      const arraysMatch = (a, b) => a.length === b.length && a.every((item) => b.includes(item))
+      const matchedByType = ATTRACTION_CATEGORY_GROUPS.find((item) => arraysMatch(item.types, typesFromQuery))
+      if (matchedByType) {
+        selectedCategoryKey.value = matchedByType.key
+        return
+      }
+    }
+
+    selectedCategoryKey.value = DEFAULT_CATEGORY_KEY
+  }
+
+  const fetchAttractionsList = async ({ contentTypeIds } = {}) => {
+    attractionsLoading.value = true
+    attractionsError.value = null
+
+    try {
+      const ids = Array.isArray(contentTypeIds) && contentTypeIds.length ? contentTypeIds : listCategoryTypes.value
+      const data = await requestAttractions({ contentTypeIds: ids })
+      attractions.value = Array.isArray(data) ? data : []
+      return attractions.value
+    } catch (error) {
+      console.error(error)
+      attractionsError.value = '여행지를 불러오지 못했습니다.'
+      attractions.value = []
+      throw error
+    } finally {
+      attractionsLoading.value = false
+    }
+  }
 
   const removeSelection = (id) => {
     selectedAttractions.value = selectedAttractions.value.filter((item) => item.id !== id)
@@ -190,6 +255,17 @@ export const useAttractionStore = defineStore('attraction', () => {
   const recommendAttraction = (options) => fetchRecommendationsForTab(options)
 
   return {
+    // 리스트
+    attractions,
+    attractionsError,
+    attractionsLoading,
+    selectedCategoryKey,
+    listActiveCategory,
+    listCategoryTypes,
+    syncCategory,
+    fetchAttractionsList,
+    categoryGroups: ATTRACTION_CATEGORY_GROUPS,
+
     loadTopics,
     regions,
     selectedRegion,
