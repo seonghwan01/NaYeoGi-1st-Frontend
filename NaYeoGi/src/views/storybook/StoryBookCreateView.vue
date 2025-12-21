@@ -112,7 +112,7 @@
                 @remove-section="removeSection(dayIndex, secIndex)"
                 @add-images="(files) => handleImageUpload(dayIndex, secIndex, files)"
                 @remove-image="(imageIndex) => handleImageDelete(dayIndex, secIndex, imageIndex)"
-                @update-memo="(text) => section.memo = text"
+                @update-content="(text) => section.content = text"
                 @update-place-name="(text) => section.placeName = text"
                 @toggle-tag="(tag) => toggleTag(section, tag)"
                 @preview-image="openImageModal"
@@ -250,7 +250,7 @@ const moveSectionToDay = (fromDayIdx, fromSecIdx, toDayIdx) => {
   currentStory.value.storyDays[toDayIdx].sections.push(section);
 };
 const addSectionToDay = (dayIndex) => {
-  currentStory.value.storyDays[dayIndex].sections.push({ id: Date.now(), placeName: '', imageUrls: [], selectedTags: [], memo: '' });
+  currentStory.value.storyDays[dayIndex].sections.push({ id: Date.now(), placeName: '', imageUrls: [], selectedTags: [], content: '' });
 };
 const removeSection = (dayIndex, sectionIndex) => {
   if (confirm('이 장소를 삭제하시겠습니까?')) {

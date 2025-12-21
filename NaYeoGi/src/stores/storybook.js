@@ -193,20 +193,37 @@ import { generateAiStoryApi, saveStoryApi, getStoryById } from "@/restapi/storyb
   
   async function generateStoryDraft() {
     isLoading.value = true;
-    storyDraft.value = null; // 초기화
+    storyDraft.value = null;
 
     try {
-      console.log("AI에게 보낼 데이터:", currentStory);
+      // 1. AI에게 보낼 데이터 정제 (Cleanup)
+      // currentStory는 reactive 객체이므로, 직접 수정하지 않고 깊은 복사를 통해 payload를 만듭니다.
+      const payload = JSON.parse(JSON.stringify(currentStory));
+      
+      payload.storyDays.forEach(day => {
+        day.sections.forEach(section => {
+          // 프론트엔드에서만 사용하는 id 속성 제거
+          delete section.id;
+          
+          // 값이 비어있는 속성 제거
+          if (section.atmosphere === "") {
+            delete section.atmosphere;
+          }
+          if (section.weather === "") {
+            delete section.weather;
+          }
+        });
+      });
 
-      // 1. 백엔드 API 호출 (Gemini 2.5 Pro에게 요청)
-      // restapi/storybook.js 에 generateAiStoryApi 함수가 있어야 합니다.
-      const response = await generateAiStoryApi(currentStory);
+      console.log("AI에게 보낼 정제된 데이터:", payload);
 
-      // 2. 백엔드에서 받은 결과(Markdown 문자열 등)를 저장
-      // response.data는 { title: "...", content: "# Markdown..." } 형태여야 함
+      // 2. 백엔드 API 호출
+      const response = await generateAiStoryApi(payload);
+
+      // 3. 백엔드에서 받은 결과 저장
       storyDraft.value = response;
 
-      // 3. 수정 페이지로 이동 (URL 경로 수정함)
+      // 4. 수정 페이지로 이동
       router.push('/storybook/edit');
 
     } catch (error) {

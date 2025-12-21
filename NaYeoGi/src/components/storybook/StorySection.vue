@@ -111,8 +111,8 @@
           class="form-control bg-light border-0"
           rows="3"
           placeholder="이 장소에서의 추억을 간단히 남겨주세요."
-          :value="sectionData.memo"
-          @input="$emit('update-memo', $event.target.value)"
+          :value="sectionData.content"
+          @input="$emit('update-content', $event.target.value)"
         ></textarea>
       </div>
     </div>
@@ -131,7 +131,7 @@ const emit = defineEmits([
   'remove-section', 
   'add-images', 
   'remove-image', 
-  'update-memo', 
+  'update-content', 
   'toggle-tag', 
   'update-place-name', 
   'preview-image'
