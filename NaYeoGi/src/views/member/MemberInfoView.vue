@@ -1,15 +1,26 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useMemberStore } from '@/stores/members'
 import axios from 'axios'
 
 const memberStore = useMemberStore()
+const router = useRouter()
 
 const userInfo = ref({})
+const originalUserInfo = ref({}) // 초기 사용자 정보를 저장할 ref
 
 const fetchMemberInfo = async () => {
   if (memberStore.userInfo && memberStore.userInfo.userId) {
     userInfo.value = { ...memberStore.userInfo }
+    originalUserInfo.value = { ...memberStore.userInfo } // 초기 값 저장
+    // 이메일이 null인 경우 빈 문자열로 초기화 (비교의 일관성을 위해)
+    if (originalUserInfo.value.email === null) {
+      originalUserInfo.value.email = ''
+    }
+    if (userInfo.value.email === null) {
+      userInfo.value.email = ''
+    }
     return memberStore.userInfo.userId
   }
 
@@ -19,6 +30,14 @@ const fetchMemberInfo = async () => {
     })
     const memberData = response.data?.data ?? response.data
     userInfo.value = memberData
+    originalUserInfo.value = { ...memberData } // 초기 값 저장
+    // 이메일이 null인 경우 빈 문자열로 초기화 (비교의 일관성을 위해)
+    if (originalUserInfo.value.email === null) {
+      originalUserInfo.value.email = ''
+    }
+    if (userInfo.value.email === null) {
+      userInfo.value.email = ''
+    }
     if (memberData?.userId) {
       memberStore.userInfo = memberData
       memberStore.isLogin = true
@@ -41,6 +60,20 @@ onMounted(() => {
 
 const updateMember = async () => {
   try {
+    // 비밀번호 변경 여부 확인 (비밀번호 필드에 값이 입력되었는지)
+    const isPasswordChanged = userInfo.value.userPassword && userInfo.value.userPassword.trim() !== ''
+
+    // 이름 또는 이메일 변경 여부 확인
+    const isNameOrEmailChanged =
+      originalUserInfo.value.userName !== userInfo.value.userName ||
+      originalUserInfo.value.email !== userInfo.value.email
+
+    // 변경 사항이 없는 경우 (비밀번호 변경도 없고, 이름/이메일 변경도 없는 경우)
+    if (!isPasswordChanged && !isNameOrEmailChanged) {
+      alert('변경사항이 없습니다.')
+      return
+    }
+
     await axios.put('http://localhost:8080/api/v1/members/me', userInfo.value, {
       withCredentials: true,
     })
@@ -51,6 +84,15 @@ const updateMember = async () => {
     }
 
     alert('회원 정보가 수정되었습니다!')
+
+    if (isPasswordChanged) {
+      // 비밀번호 필드 초기화
+      userInfo.value.userPassword = ''
+      router.push('/main')
+    } else {
+      // 이름/이메일만 변경된 경우, originalUserInfo를 현재 userInfo로 업데이트
+      originalUserInfo.value = { ...userInfo.value }
+    }
   } catch (error) {
     console.error(error)
     alert('수정에 실패했습니다.')
