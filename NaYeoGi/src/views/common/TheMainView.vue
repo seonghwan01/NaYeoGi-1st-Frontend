@@ -1,11 +1,17 @@
 <script setup>
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { Carousel } from 'bootstrap';
 import ContentCard from '@/components/common/ContentCard.vue';
 
 const router = useRouter();
 
-// 임시 이미지 URL
-const IMG_BOOK = "https://images.unsplash.com/photo-1544716278-ca83adf3663c?auto=format&fit=crop&w=800&q=80";
+// 캐러셀 이미지 URL 배열
+const carouselImages = ref([
+  "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1503220317375-aaad61436b1b?auto=format&fit=crop&w=800&q=80",
+]);
+
 const IMG_MAP = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80";
 
 const CATEGORY_ITEMS = [
@@ -17,6 +23,16 @@ const CATEGORY_ITEMS = [
   { key: 'stay', label: '숙박', types: [32], accent: '#6366f1', desc: '편안한 숙소 찾기' },
   { key: 'shopping', label: '쇼핑', types: [38], accent: '#f59e0b', desc: '쇼핑 명소' },
 ];
+
+onMounted(() => {
+  const carouselElement = document.getElementById('imageCarousel');
+  if (carouselElement) {
+    const carousel = new Carousel(carouselElement, {
+      interval: 3000,
+      ride: 'carousel',
+    });
+  }
+});
 
 // 페이지 이동 함수
 const goStorybook = () => router.push('/Mypage'); // 추후 생성 필요
@@ -35,11 +51,21 @@ const goCategory = (item) => {
       <!-- 상단 2분할 카드 -->
       <div class="row g-4" style="height: 500px;">
 
-        <!-- 1. AI 스토리북 만들기 -->
+        <!-- 1. AI 여행 기록 -->
         <div class="col-md-6">
-          <div @click="goStorybook" class="card text-white h-100 overflow-hidden shadow-lg">
-            <img :src="IMG_BOOK" class="card-img h-100" alt="Storybook background" style="object-fit: cover;">
-            <div class="card-img-overlay d-flex flex-column justify-content-end bg-dark bg-opacity-50">
+          <div @click="goStorybook" class="card text-white h-100 overflow-hidden shadow-lg" role="button">
+            <div id="imageCarousel" class="carousel slide carousel-fade h-100">
+              <div class="carousel-inner h-100">
+                <div
+                  v-for="(image, index) in carouselImages"
+                  :key="index"
+                  :class="['carousel-item', 'h-100', { active: index === 0 }]"
+                >
+                  <img :src="image" class="d-block w-100 h-100" alt="Travel image" style="object-fit: cover;">
+                </div>
+              </div>
+            </div>
+            <div class="card-img-overlay d-flex flex-column justify-content-end bg-dark bg-opacity-50" style="z-index: 2;">
               <h2 class="card-title display-5 fw-bold">AI 여행 기록</h2>
               <p class="card-text fs-5">사진과 그때의 감정만 올리세요.<br>나머지는 AI 작가가 완성해드립니다.</p>
             </div>
@@ -85,4 +111,6 @@ const goCategory = (item) => {
 
 <style scoped>
 /* Scoped styles for TheMainView.vue can be added here if needed */
+
+
 </style>
