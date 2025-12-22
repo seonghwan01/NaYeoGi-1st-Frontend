@@ -9,7 +9,7 @@
         <section class="survey-card">
           <div class="icon">📍</div>
           <h1 class="title">어디로 여행가시나요?</h1>
-          <p class="subtitle">방문을 원하는 지역을 선택해 주세요.</p>
+          <p class="subtitle">원하는 지역 하나를 선택해주세요</p>
           <div class="chips">
             <button
               v-for="region in regions"
@@ -28,7 +28,7 @@
         <section class="survey-card">
           <div class="icon">✨</div>
           <h2 class="title">내가 원하는 여행은?</h2>
-          <p class="subtitle">서버에서 토픽을 불러옵니다.</p>
+          <p class="subtitle">원하는 여행 테마들을 선택해주세요</p>
           <div class="chips">
             <div v-if="topicError" class="chip chip-error">{{ topicError }}</div>
             <template v-else>
