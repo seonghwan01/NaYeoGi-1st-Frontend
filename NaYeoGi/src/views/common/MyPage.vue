@@ -18,6 +18,9 @@ const editingPlanId = ref(null)
 const editingPlanDraft = ref(null)
 const isSavingPlan = ref(false)
 const planSaveError = ref('')
+const deletingPlanId = ref(null)
+const planDeleteError = ref('')
+const planDeleteErrorId = ref(null)
 
 const normalizePlans = (planList) =>
   planList
@@ -216,6 +219,31 @@ const savePlanEdit = async () => {
     isSavingPlan.value = false
   }
 }
+
+const deletePlan = async (plan) => {
+  if (!plan?.id || deletingPlanId.value) return
+  const confirmed = window.confirm(`"${plan.title}" 여행 계획을 삭제할까요?`)
+  if (!confirmed) return
+
+  deletingPlanId.value = plan.id
+  planDeleteError.value = ''
+  planDeleteErrorId.value = null
+  try {
+    await axios.delete(`http://localhost:8080/api/v1/plans/${plan.id}`, {
+      withCredentials: true,
+    })
+    myPlans.value = myPlans.value.filter((item) => item.id !== plan.id)
+    if (editingPlanId.value === plan.id) {
+      cancelEditPlan()
+    }
+  } catch (error) {
+    console.error('여행 계획 삭제 실패', error)
+    planDeleteError.value = '삭제에 실패했습니다. 잠시 후 다시 시도해주세요.'
+    planDeleteErrorId.value = plan.id
+  } finally {
+    deletingPlanId.value = null
+  }
+}
 </script>
 
 <template>
@@ -308,6 +336,13 @@ const savePlanEdit = async () => {
                         수정
                       </button>
                       <button
+                        class="btn btn-outline-danger btn-sm"
+                        :disabled="deletingPlanId === plan.id"
+                        @click="deletePlan(plan)"
+                      >
+                        삭제
+                      </button>
+                      <button
                         class="btn btn-primary btn-sm"
                         @click="goToStoryCreate(plan.id)"
                       >
@@ -355,6 +390,12 @@ const savePlanEdit = async () => {
                         <span v-if="planSaveError" class="text-warning small">{{ planSaveError }}</span>
                       </div>
                     </div>
+                    <p
+                      v-if="planDeleteError && planDeleteErrorId === plan.id"
+                      class="mt-2 mb-0 text-warning small"
+                    >
+                      {{ planDeleteError }}
+                    </p>
                   </div>
                 </div>
               </div>
