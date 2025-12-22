@@ -1,20 +1,27 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import TheHeader from '@/views/common/TheHeader.vue'
+import { useMemberStore } from './stores/members'
 
 const route = useRoute()
+const memberStore = useMemberStore()
+
+// 앱이 시작될 때 (새로고침 시) 로그인 상태를 복원합니다.
+onMounted(() => {
+  memberStore.getUserInfo()
+})
 
 // 현재 경로가 랜딩 페이지인지 확인
 const isLandingPage = computed(() => route.name === 'landing' || route.name === 'login')
 const isAttractionSelect = computed(() => route.name === 'attraction-select')
 
-// 배경 슬라이드 이미지 목록
+// 배경 슬라이드 이미지 목록 (테마: 사계절 - 봄, 여름, 가을, 겨울)
 const bgImages = ref([
-  'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1522748906645-95d8adfd52c7?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1476820865390-c52aeebb9891?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?auto=format&fit=crop&w=1920&q=80',
 ])
 </script>
 

@@ -7,12 +7,9 @@ import axios from 'axios'
 const router = useRouter()
 const memberStore = useMemberStore()
 
-// 1. 상태 변수들
-const activeTab = ref('plans') // 현재 선택된 탭 (plans, stories)
-const myPlans = ref([]) // 내 여행 계획 리스트
+const myPlans = ref([])
 const isPlansLoading = ref(false)
 const planError = ref('')
-const myStories = ref([]) // 내 스토리북 리스트
 const planOwnerId = ref('')
 const editingPlanId = ref(null)
 const editingPlanDraft = ref(null)
@@ -92,7 +89,7 @@ const fetchMemberInfo = async () => {
   }
 
   try {
-    const response = await axios.get('http://localhost:8080/api/v1/members/me', {
+    const response = await axios.get('/api/v1/members/me', {
       withCredentials: true,
     })
     const memberData = response.data?.data ?? response.data
@@ -114,7 +111,7 @@ const fetchMyPlans = async (memberId) => {
   try {
     isPlansLoading.value = true
     planError.value = ''
-    const response = await axios.get('http://localhost:8080/api/v1/plans', {
+    const response = await axios.get('/api/v1/plans', {
       params: { memberId },
       withCredentials: true,
     })
@@ -203,7 +200,7 @@ const savePlanEdit = async () => {
     }
 
     const response = await axios.put(
-      `http://localhost:8080/api/v1/plans/${draft.id}`,
+      `/api/v1/plans/${draft.id}`,
       payload,
       { withCredentials: true },
     )
@@ -229,7 +226,7 @@ const deletePlan = async (plan) => {
   planDeleteError.value = ''
   planDeleteErrorId.value = null
   try {
-    await axios.delete(`http://localhost:8080/api/v1/plans/${plan.id}`, {
+    await axios.delete(`/api/v1/plans/${plan.id}`, {
       withCredentials: true,
     })
     myPlans.value = myPlans.value.filter((item) => item.id !== plan.id)
@@ -254,158 +251,118 @@ const deletePlan = async (plan) => {
       backgroundPosition: 'center',
     }"
   >
-    <div
-      class="position-absolute top-0 start-0 w-100 h-100"
-      style="background-color: rgba(0, 0, 0, 0.6)"
-    ></div>
-
-    <div class="position-relative container animate-fade-in-up">
-      <div class="row">
-        <div class="col-md-3 mb-4">
-          <div class="library-card p-4 rounded-4 h-100">
-            <h3 class="fw-bold mb-4 text-center">📚 내 서재</h3>
-            <div class="list-group list-group-flush bg-transparent">
-              <button
-                class="list-group-item list-group-item-action bg-transparent text-white border-0 py-3 fw-bold"
-                :class="{ 'active-menu': activeTab === 'plans' }"
-                @click="activeTab = 'plans'"
-              >
-                ✈️ 나의 여행 계획
-              </button>
-              <button
-                class="list-group-item list-group-item-action bg-transparent text-white border-0 py-3 fw-bold"
-                :class="{ 'active-menu': activeTab === 'stories' }"
-                @click="activeTab = 'stories'"
-              >
-                📖 스토리북
-              </button>
-            </div>
+    <div class="position-relative container animate-fade-in-up my-5">
+      <div class="library-card p-5 rounded-4">
+        <h4 class="mb-4 fw-bold">✈️ 나의 여행 계획</h4>
+        <div v-if="isPlansLoading" class="text-center py-5 text-white-50">
+          <div class="spinner-border text-light" role="status">
+            <span class="visually-hidden">Loading...</span>
           </div>
+          <p class="mt-3">여행 계획을 불러오는 중입니다.</p>
         </div>
-
-        <div class="col-md-9">
-          <div class="library-card p-5 rounded-4 h-100">
-            <div v-if="activeTab === 'plans'">
-              <h4 class="mb-4 fw-bold">✈️ 나의 여행 계획</h4>
-              <div v-if="isPlansLoading" class="text-center py-5 text-white-50">
-                <div class="spinner-border text-light" role="status">
-                  <span class="visually-hidden">Loading...</span>
+        <div v-else-if="planError" class="text-center py-5 text-white-50">
+          <p class="mb-3">{{ planError }}</p>
+          <button class="btn btn-outline-light btn-sm" @click="retryFetchPlans">
+            다시 시도하기
+          </button>
+        </div>
+        <div v-else-if="!myPlans.length" class="text-center py-5 text-white-50">
+          <p>아직 저장된 여행 계획이 없습니다.</p>
+          <button class="btn btn-outline-light btn-sm mt-2" @click="goToPlanBuilder">
+            여행 계획 짜러 가기
+          </button>
+        </div>
+        <div v-else>
+          <div class="plan-list">
+            <div
+              v-for="plan in sortedPlans"
+              :key="plan.id"
+              class="plan-card rounded-4 p-3 mb-3"
+            >
+              <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3">
+                <div class="flex-grow-1">
+                  <h6 class="mb-2">{{ plan.title }}</h6>
+                  <p class="mb-1 small">
+                    {{ formatPlanPeriod(plan) }}
+                    <span v-if="calcDurationDays(plan)">
+                      · {{ calcDurationDays(plan) }}일
+                    </span>
+                  </p>
+                  <p class="mb-0 text-white-50 small">{{ plan.description || '메모 없음' }}</p>
                 </div>
-                <p class="mt-3">여행 계획을 불러오는 중입니다.</p>
+                <div class="text-md-end small text-white-50">
+                  {{ formatCreatedAt(plan) || '작성일 정보 없음' }}
+                </div>
               </div>
-              <div v-else-if="planError" class="text-center py-5 text-white-50">
-                <p class="mb-3">{{ planError }}</p>
-                <button class="btn btn-outline-light btn-sm" @click="retryFetchPlans">
-                  다시 시도하기
+              <div class="mt-3 d-flex align-items-center gap-2">
+                <button
+                  class="btn btn-outline-light btn-sm"
+                  :disabled="isSavingPlan && editingPlanId === plan.id"
+                  @click="startEditPlan(plan)"
+                >
+                  수정
+                </button>
+                <button
+                  class="btn btn-outline-danger btn-sm"
+                  :disabled="deletingPlanId === plan.id"
+                  @click="deletePlan(plan)"
+                >
+                  삭제
+                </button>
+                <button
+                  class="btn btn-primary btn-sm"
+                  @click="goToStoryCreate(plan.id)"
+                >
+                  스토리 생성 ✨
                 </button>
               </div>
-              <div v-else-if="!myPlans.length" class="text-center py-5 text-white-50">
-                <p>아직 저장된 여행 계획이 없습니다.</p>
-                <button class="btn btn-outline-light btn-sm mt-2" @click="goToPlanBuilder">
-                  여행 계획 짜러 가기
-                </button>
-              </div>
-              <div v-else>
-                <div class="plan-list">
-                  <div
-                    v-for="plan in sortedPlans"
-                    :key="plan.id"
-                    class="plan-card rounded-4 p-3 mb-3"
-                  >
-                    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3">
-                      <div class="flex-grow-1">
-                        <h6 class="mb-2">{{ plan.title }}</h6>
-                        <p class="mb-1 small">
-                          {{ formatPlanPeriod(plan) }}
-                          <span v-if="calcDurationDays(plan)">
-                            · {{ calcDurationDays(plan) }}일
-                          </span>
-                        </p>
-                        <p class="mb-0 text-white-50 small">{{ plan.description || '메모 없음' }}</p>
-                      </div>
-                      <div class="text-md-end small text-white-50">
-                        {{ formatCreatedAt(plan) || '작성일 정보 없음' }}
-                      </div>
-                    </div>
-                    <div class="mt-3 d-flex align-items-center gap-2">
-                      <button
-                        class="btn btn-outline-light btn-sm"
-                        :disabled="isSavingPlan && editingPlanId === plan.id"
-                        @click="startEditPlan(plan)"
-                      >
-                        수정
-                      </button>
-                      <button
-                        class="btn btn-outline-danger btn-sm"
-                        :disabled="deletingPlanId === plan.id"
-                        @click="deletePlan(plan)"
-                      >
-                        삭제
-                      </button>
-                      <button
-                        class="btn btn-primary btn-sm"
-                        @click="goToStoryCreate(plan.id)"
-                      >
-                        스토리 생성 ✨
-                      </button>
-                    </div>
-                    <div
-                      v-if="editingPlanId === plan.id && editingPlanDraft"
-                      class="mt-3 p-3 rounded-3 plan-edit"
-                    >
-                      <div class="row g-3">
-                        <div class="col-md-6">
-                          <label class="form-label small text-white-50">제목</label>
-                          <input
-                            v-model="editingPlanDraft.title"
-                            type="text"
-                            class="form-control"
-                            required
-                          />
-                        </div>
-                        <div class="col-md-3">
-                          <label class="form-label small text-white-50">시작일</label>
-                          <input v-model="editingPlanDraft.startDate" type="date" class="form-control" />
-                        </div>
-                        <div class="col-md-3">
-                          <label class="form-label small text-white-50">종료일</label>
-                          <input v-model="editingPlanDraft.endDate" type="date" class="form-control" />
-                        </div>
-                        <div class="col-12">
-                          <label class="form-label small text-white-50">설명</label>
-                          <textarea v-model="editingPlanDraft.description" class="form-control" rows="3" />
-                        </div>
-                      </div>
-                      <div class="d-flex align-items-center gap-2 mt-3">
-                        <button
-                          class="btn btn-primary btn-sm"
-                          :disabled="isSavingPlan"
-                          @click="savePlanEdit"
-                        >
-                          저장
-                        </button>
-                        <button class="btn btn-outline-light btn-sm" @click="cancelEditPlan">
-                          취소
-                        </button>
-                        <span v-if="planSaveError" class="text-warning small">{{ planSaveError }}</span>
-                      </div>
-                    </div>
-                    <p
-                      v-if="planDeleteError && planDeleteErrorId === plan.id"
-                      class="mt-2 mb-0 text-warning small"
-                    >
-                      {{ planDeleteError }}
-                    </p>
+              <div
+                v-if="editingPlanId === plan.id && editingPlanDraft"
+                class="mt-3 p-3 rounded-3 plan-edit"
+              >
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label small text-white-50">제목</label>
+                    <input
+                      v-model="editingPlanDraft.title"
+                      type="text"
+                      class="form-control"
+                      required
+                    />
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label small text-white-50">시작일</label>
+                    <input v-model="editingPlanDraft.startDate" type="date" class="form-control" />
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label small text-white-50">종료일</label>
+                    <input v-model="editingPlanDraft.endDate" type="date" class="form-control" />
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label small text-white-50">설명</label>
+                    <textarea v-model="editingPlanDraft.description" class="form-control" rows="3" />
                   </div>
                 </div>
+                <div class="d-flex align-items-center gap-2 mt-3">
+                  <button
+                    class="btn btn-primary btn-sm"
+                    :disabled="isSavingPlan"
+                    @click="savePlanEdit"
+                  >
+                    저장
+                  </button>
+                  <button class="btn btn-outline-light btn-sm" @click="cancelEditPlan">
+                    취소
+                  </button>
+                  <span v-if="planSaveError" class="text-warning small">{{ planSaveError }}</span>
+                </div>
               </div>
-            </div>
-
-            <div v-else-if="activeTab === 'stories'">
-              <h4 class="mb-4 fw-bold">📖 마이 스토리북</h4>
-              <div v-if="myStories.length === 0" class="text-center py-5 text-white-50">
-                <p>작성된 스토리북이 없습니다.</p>
-              </div>
+              <p
+                v-if="planDeleteError && planDeleteErrorId === plan.id"
+                class="mt-2 mb-0 text-warning small"
+              >
+                {{ planDeleteError }}
+              </p>
             </div>
           </div>
         </div>
@@ -417,7 +374,7 @@ const deletePlan = async (plan) => {
 <style scoped>
 /* 유리창 효과 스타일 (로그인 페이지와 동일) */
 .library-card {
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.256);
   backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: white;
@@ -430,13 +387,6 @@ const deletePlan = async (plan) => {
 }
 .form-control:disabled {
   background-color: rgba(255, 255, 255, 0.5);
-}
-
-/* 메뉴 활성화 스타일 */
-.active-menu {
-  background-color: rgba(255, 255, 255, 0.2) !important;
-  border-left: 4px solid #0d6efd !important;
-  color: #fff !important;
 }
 
 /* 애니메이션 */

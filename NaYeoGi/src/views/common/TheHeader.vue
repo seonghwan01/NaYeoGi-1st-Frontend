@@ -74,7 +74,10 @@ const navigate = (path) => {
               <a href="#" @click.prevent="navigate('/member-info')" class="nav-link fw-bold">{{ userInfo.userName }}님</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#" @click.prevent="navigate('/Mypage')">내 서재</a>
+              <a class="nav-link" href="#" @click.prevent="navigate('/my-plans')">나의 여행 계획</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#" @click.prevent="navigate('/my-stories')">나의 여행 기록</a>
             </li>
             <li class="nav-item">
               <a class="nav-link text-danger" href="#" @click.prevent="goLogout">로그아웃</a>

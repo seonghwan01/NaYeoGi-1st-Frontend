@@ -1,7 +1,8 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import ContentCard from '@/components/common/ContentCard.vue';
+import HelpModal from '@/components/common/HelpModal.vue';
 
 const router = useRouter();
 
@@ -23,13 +24,28 @@ const CATEGORY_ITEMS = [
 ];
 
 // 페이지 이동 함수
-const goStorybook = () => router.push('/Mypage'); // 추후 생성 필요
+const goStorybook = () => router.push('/my-plans'); // 추후 생성 필요
 const goRecommend = () => router.push('/attraction/recommend'); // 추후 생성 필요
 const goCategory = (item) => {
   router.push({
     name: 'attraction-list',
     query: { category: item.key, contentTypeId: item.types },
   });
+};
+
+// 도움말 모달 로직
+const showHelpModal = ref(false);
+
+onMounted(() => {
+  const hasSeenHelp = localStorage.getItem('hasSeenHelp');
+  if (!hasSeenHelp) {
+    showHelpModal.value = true;
+  }
+});
+
+const handleModalClose = () => {
+  localStorage.setItem('hasSeenHelp', 'true');
+  showHelpModal.value = false;
 };
 </script>
 
@@ -94,6 +110,9 @@ const goCategory = (item) => {
         </div>
       </div>
     </ContentCard>
+
+    <!-- 도움말 모달 컴포넌트 -->
+    <HelpModal v-model="showHelpModal" @close="handleModalClose" />
   </div>
 </template>
 

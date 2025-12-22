@@ -20,9 +20,9 @@ const router = createRouter({
       component: () => import('@/views/member/MemberJoinView.vue'),
     },
     {
-      path: '/Mypage',
-      name: 'Mypage',
-      component: () => import('@/views/common/MyPage.vue'),
+      path: '/my-plans',
+      name: 'my-plans',
+      component: () => import('@/views/attraction/MyPlansView.vue'),
     },
     {
       path: '/member-info',
@@ -41,15 +41,21 @@ const router = createRouter({
       props: true, // planId를 컴포넌트의 props로 전달
     },
     {
-      path: '/storybook/edit',
+      path: '/storybook/edit/:storyId',
       name: 'storybook-edit',
       component: () => import('@/views/storybook/StoryBookEditView.vue'),
+      props: true,
     },
     {
       path: '/storybook/view/:storyId',
       name: 'storybook-view',
       component: () => import('@/views/storybook/StoryBookDisplayView.vue'),
       props: true, // storyId를 컴포넌트의 props로 전달
+    },
+    {
+      path: '/my-stories',
+      name: 'my-stories',
+      component: () => import('@/views/storybook/MyStorybooksView.vue'),
     },
     {
       path: '/attraction/recommend',
