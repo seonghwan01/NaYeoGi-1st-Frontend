@@ -23,7 +23,7 @@ const CATEGORY_ITEMS = [
 ];
 
 // 페이지 이동 함수
-const goStorybook = () => router.push('/Mypage'); // 추후 생성 필요
+const goStorybook = () => router.push('/my-plans'); // 추후 생성 필요
 const goRecommend = () => router.push('/attraction/recommend'); // 추후 생성 필요
 const goCategory = (item) => {
   router.push({

@@ -3,7 +3,7 @@ import { ref , reactive} from 'vue';
 import { useRouter } from 'vue-router';
 // API 통신을 담당할 파일을 임포트합니다.
 import { uploadImagesApi, deleteImageApi } from "@/restapi/image";
-import { generateAiStoryApi, saveStoryApi, getStoryById, getMyStories } from "@/restapi/storybook";
+import { generateAiStoryApi, saveStoryApi, getStoryById, getMyStories, deleteStoryApi, updateStoryVisibilityApi, updateStoryApi } from "@/restapi/storybook";
 
  export const useStorybookStore = defineStore('storybook', () => {
   const router = useRouter();
@@ -169,9 +169,17 @@ import { generateAiStoryApi, saveStoryApi, getStoryById, getMyStories } from "@/
           if (section.weather === "") delete section.weather;
         });
       });
+
+      // AI 생성 API 호출 (백엔드에서 바로 저장됨)
       const response = await generateAiStoryApi(payload);
-      storyDraft.value = response;
-      router.push('/storybook/edit');
+
+      // TODO: 나중에 상세 조회 구현 시, 아래 response에 담긴 storyId를 사용
+      // const newStoryId = response.storyId;
+      // router.push(`/storybook/display/${newStoryId}`);
+
+      // 현재는 목록 페이지로 이동
+      router.push('/my-stories');
+
     } catch (error) {
       console.error("AI 스토리 생성 실패:", error);
       alert("AI가 글을 쓰는 데 실패했습니다. 잠시 후 다시 시도해주세요.");
@@ -183,9 +191,9 @@ import { generateAiStoryApi, saveStoryApi, getStoryById, getMyStories } from "@/
   async function saveFinalStory(finalStoryData) {
     isLoading.value = true;
     try {
-      const response = await saveStoryApi(finalStoryData);
-      const savedId = response.storyId;
-      router.push(`/storybook/display/${savedId}`);
+      await saveStoryApi(finalStoryData);
+      // const savedId = response.storyId; // 더 이상 상세 페이지로 가지 않으므로 ID를 사용할 필요가 없습니다.
+      router.push('/my-stories'); // 나의 여행 기록(스토리 목록) 페이지로 이동합니다.
     } catch (error) {
       console.error("최종 스토리 저장 실패:", error);
       alert("스토리를 저장하는 데 실패했습니다.");
@@ -221,6 +229,49 @@ import { generateAiStoryApi, saveStoryApi, getStoryById, getMyStories } from "@/
     }
   }
 
+  async function deleteStory(storyId) {
+    isLoading.value = true;
+    try {
+      await deleteStoryApi(storyId);
+      alert('스토리가 삭제되었습니다.');
+      router.push('/my-stories');
+    } catch (error) {
+      console.error("스토리 삭제 실패:", error);
+      alert("스토리 삭제에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function updateStoryVisibility(storyId, newStatus) {
+    try {
+      await updateStoryVisibilityApi(storyId, newStatus);
+      return { isPublic: newStatus }; // 성공 시, 낙관적 업데이트를 위해 새 상태를 반환
+    } catch (error) {
+      console.error("공개 상태 변경 실패:", error);
+      alert("공개 상태 변경에 실패했습니다. 다시 시도해주세요.");
+      return null;
+    }
+  }
+
+  function setStoryForEditing(storyData) {
+    storyDraft.value = storyData;
+  }
+
+  async function updateStory(storyId, storyData) {
+    isLoading.value = true;
+    try {
+      await updateStoryApi(storyId, storyData);
+      alert('스토리가 수정되었습니다.');
+      router.push(`/storybook/view/${storyId}`);
+    } catch (error) {
+      console.error("스토리 수정 실패:", error);
+      alert("스토리 수정에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   return {
     isLoading,
     myStories,
@@ -235,5 +286,9 @@ import { generateAiStoryApi, saveStoryApi, getStoryById, getMyStories } from "@/
     saveFinalStory,
     fetchStory,
     fetchMyStories,
+    deleteStory,
+    updateStoryVisibility,
+    setStoryForEditing,
+    updateStory,
   };
 });

@@ -44,7 +44,7 @@ onMounted(() => {
 
         <div v-else class="row g-4">
           <div v-for="story in myStories" :key="story.storyId" class="col-lg-4 col-md-6">
-            <RouterLink :to="`/storybook/display/${story.storyId}`" class="card-link">
+            <RouterLink :to="`/storybook/view/${story.storyId}`" class="card-link">
               <div class="card h-100 shadow-sm story-card">
                 <div class="thumbnail-wrapper">
                   <img

@@ -1,9 +1,16 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import TheHeader from '@/views/common/TheHeader.vue'
+import { useMemberStore } from './stores/members'
 
 const route = useRoute()
+const memberStore = useMemberStore()
+
+// 앱이 시작될 때 (새로고침 시) 로그인 상태를 복원합니다.
+onMounted(() => {
+  memberStore.getUserInfo()
+})
 
 // 현재 경로가 랜딩 페이지인지 확인
 const isLandingPage = computed(() => route.name === 'landing' || route.name === 'login')

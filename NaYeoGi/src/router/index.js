@@ -41,9 +41,10 @@ const router = createRouter({
       props: true, // planId를 컴포넌트의 props로 전달
     },
     {
-      path: '/storybook/edit',
+      path: '/storybook/edit/:storyId',
       name: 'storybook-edit',
       component: () => import('@/views/storybook/StoryBookEditView.vue'),
+      props: true,
     },
     {
       path: '/storybook/view/:storyId',
