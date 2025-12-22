@@ -9,7 +9,7 @@ const memberStore = useMemberStore()
 
 // 1. 상태 변수들
 // 여기서 탭 관리를 위한 상태 변수와 회원 정보, 여행 계획, 스토리북 데이터를 정의합니다.
-const activeTab = ref('info') // 현재 선택된 탭 (info, plans, stories)
+const activeTab = ref('plans') // 현재 선택된 탭 (info, plans, stories)
 const userInfo = ref({}) // 내 정보 담을 객체
 const myPlans = ref([]) // 내 여행 계획 리스트
 const isPlansLoading = ref(false)

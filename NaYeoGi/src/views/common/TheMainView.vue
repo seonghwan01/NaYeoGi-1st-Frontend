@@ -19,7 +19,7 @@ const CATEGORY_ITEMS = [
 ];
 
 // 페이지 이동 함수
-const goStorybook = () => router.push('/storybook/create/1'); // 추후 생성 필요
+const goStorybook = () => router.push('/Mypage'); // 추후 생성 필요
 const goRecommend = () => router.push('/attraction/recommend'); // 추후 생성 필요
 const goCategory = (item) => {
   router.push({
@@ -40,8 +40,8 @@ const goCategory = (item) => {
           <div @click="goStorybook" class="card text-white h-100 overflow-hidden shadow-lg">
             <img :src="IMG_BOOK" class="card-img h-100" alt="Storybook background" style="object-fit: cover;">
             <div class="card-img-overlay d-flex flex-column justify-content-end bg-dark bg-opacity-50">
-              <h2 class="card-title display-5 fw-bold">AI 스토리북 만들기</h2>
-              <p class="card-text fs-5">사진만 올리세요.<br>나머지는 AI 작가가 완성해드립니다.</p>
+              <h2 class="card-title display-5 fw-bold">AI 여행 기록</h2>
+              <p class="card-text fs-5">사진과 그때의 감정만 올리세요.<br>나머지는 AI 작가가 완성해드립니다.</p>
             </div>
           </div>
         </div>
