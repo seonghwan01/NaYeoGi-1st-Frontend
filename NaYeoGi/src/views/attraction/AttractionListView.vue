@@ -200,29 +200,29 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="page">
-    <header class="page-header">
-      <div>
-        <p class="eyebrow">카테고리 탐색</p>
-        <h1 class="title">{{ listActiveCategory.label }} 여행지</h1>
-        <p class="subtitle">왼쪽 지도에서 위치를 확인하고, 오른쪽 목록을 클릭해 자세히 볼 수 있어요.</p>
-      </div>
-    </header>
-
-    <div class="category-row">
-      <button
-        v-for="item in ATTRACTION_CATEGORY_GROUPS"
-        :key="item.key"
-        type="button"
-        class="category-btn"
-        :class="{ active: item.key === listActiveCategory.key }"
-        :style="{ '--accent': item.color }"
-        @click="selectCategory(item.key)"
-      >
-        {{ item.label }}
-      </button>
-    </div>
-
     <ContentCard>
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">카테고리 탐색</p>
+          <h1 class="title">{{ listActiveCategory.label }} 여행지</h1>
+          <p class="subtitle">왼쪽 지도에서 위치를 확인하고, 오른쪽 목록을 클릭해 자세히 볼 수 있어요.</p>
+        </div>
+      </header>
+
+      <div class="category-row">
+        <button
+          v-for="item in ATTRACTION_CATEGORY_GROUPS"
+          :key="item.key"
+          type="button"
+          class="category-btn"
+          :class="{ active: item.key === listActiveCategory.key }"
+          :style="{ '--accent': item.color }"
+          @click="selectCategory(item.key)"
+        >
+          {{ item.label }}
+        </button>
+      </div>
+
       <div class="layout">
         <section class="map-pane">
           <div ref="mapContainer" class="map-canvas"></div>
@@ -269,12 +269,12 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.page {
+/* .page {
   min-height: 100vh;
   padding: 30px 0 50px;
   background: #f8fafc;
   color: #0f172a;
-}
+} */
 
 .page-header {
   margin-bottom: 18px;

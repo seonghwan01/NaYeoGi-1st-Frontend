@@ -1,57 +1,59 @@
 <template>
-  <div class="recommend-page">
-    <header class="page-header">
-      <div class="title">최적의 여행지 추천을 위한 설문에 답을 해주세요</div>
-    </header>
+  <div class="container my-5">
+    <ContentCard>
+      <header class="page-header">
+        <div class="title">최적의 여행지 추천을 위한 설문에 답을 해주세요</div>
+      </header>
 
-    <main class="content">
-      <section class="survey-card">
-        <div class="icon">📍</div>
-        <h1 class="title">어디로 여행가시나요?</h1>
-        <p class="subtitle">방문을 원하는 지역을 선택해 주세요.</p>
-        <div class="chips">
-          <button
-            v-for="region in regions"
-            :key="region"
-            type="button"
-            class="chip"
-            :class="{ active: selectedRegion === region }"
-            @click="selectRegion(region)"
-          >
-            <span class="chip-hash">#</span>
-            {{ region }}
-          </button>
-        </div>
-      </section>
-
-      <section class="survey-card">
-        <div class="icon">✨</div>
-        <h2 class="title">내가 원하는 여행은?</h2>
-        <p class="subtitle">서버에서 토픽을 불러옵니다.</p>
-        <div class="chips">
-          <div v-if="topicError" class="chip chip-error">{{ topicError }}</div>
-          <template v-else>
+      <main class="content">
+        <section class="survey-card">
+          <div class="icon">📍</div>
+          <h1 class="title">어디로 여행가시나요?</h1>
+          <p class="subtitle">방문을 원하는 지역을 선택해 주세요.</p>
+          <div class="chips">
             <button
-              v-for="topic in topics"
-              :key="topic.id"
+              v-for="region in regions"
+              :key="region"
               type="button"
               class="chip"
-              :class="{ active: selectedTopics.includes(topic.id) }"
-              @click="toggleTopic(topic.id)"
+              :class="{ active: selectedRegion === region }"
+              @click="selectRegion(region)"
             >
-              #{{ topic.question }}
+              <span class="chip-hash">#</span>
+              {{ region }}
             </button>
-          </template>
-        </div>
-      </section>
-    </main>
+          </div>
+        </section>
 
-    <footer class="footer">
-      <button type="button" class="next-btn" :disabled="isRecommending" @click="handleSubmit">
-        {{ isRecommending ? '추천 준비 중...' : '설문 제출' }}
-      </button>
-      <p v-if="recommendationError" class="submit-error">{{ recommendationError }}</p>
-    </footer>
+        <section class="survey-card">
+          <div class="icon">✨</div>
+          <h2 class="title">내가 원하는 여행은?</h2>
+          <p class="subtitle">서버에서 토픽을 불러옵니다.</p>
+          <div class="chips">
+            <div v-if="topicError" class="chip chip-error">{{ topicError }}</div>
+            <template v-else>
+              <button
+                v-for="topic in topics"
+                :key="topic.id"
+                type="button"
+                class="chip"
+                :class="{ active: selectedTopics.includes(topic.id) }"
+                @click="toggleTopic(topic.id)"
+              >
+                #{{ topic.question }}
+              </button>
+            </template>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <button type="button" class="next-btn" :disabled="isRecommending" @click="handleSubmit">
+          {{ isRecommending ? '추천 준비 중...' : '설문 제출' }}
+        </button>
+        <p v-if="recommendationError" class="submit-error">{{ recommendationError }}</p>
+      </footer>
+    </ContentCard>
   </div>
 </template>
 
@@ -60,6 +62,7 @@ import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useAttractionStore } from '@/stores/attractions'
+import ContentCard from '@/components/common/ContentCard.vue'
 
 const router = useRouter()
 const attractionStore = useAttractionStore()
@@ -85,21 +88,21 @@ onMounted(() => {loadTopics() })
 </script>
 
 <style scoped>
-.recommend-page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: #f7f9fb;
-  color: #1f2d3d;
-}
+
 
 .page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  font-weight: 600;
+  padding: 12px 30px; /* 패딩 증가 */
 }
+
+.page-header .title {
+  font-size: 28px; /* 폰트 크기 증가 */
+  font-weight: 800; /* 폰트 굵기 강조 */
+  color: #2d3748; /* 적절한 색상으로 조정, ContentCard의 배경색에 따라 가시성 좋게 */
+}
+
 
 .back-btn {
   border: none;
@@ -199,13 +202,7 @@ onMounted(() => {loadTopics() })
   cursor: default;
 }
 
-.footer {
-  position: sticky;
-  bottom: 0;
-  width: 100%;
-  background: linear-gradient(180deg, rgba(247, 249, 251, 0.8) 0%, #f7f9fb 40%, #f7f9fb 100%);
-  padding: 16px;
-}
+
 
 .next-btn {
   width: 100%;
