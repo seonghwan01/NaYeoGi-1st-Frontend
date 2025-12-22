@@ -92,7 +92,7 @@ const fetchMemberInfo = async () => {
   }
 
   try {
-    const response = await axios.get('http://localhost:8080/api/v1/members/me', {
+    const response = await axios.get('/api/v1/members/me', {
       withCredentials: true,
     })
     const memberData = response.data?.data ?? response.data
@@ -114,7 +114,7 @@ const fetchMyPlans = async (memberId) => {
   try {
     isPlansLoading.value = true
     planError.value = ''
-    const response = await axios.get('http://localhost:8080/api/v1/plans', {
+    const response = await axios.get('/api/v1/plans', {
       params: { memberId },
       withCredentials: true,
     })
@@ -203,7 +203,7 @@ const savePlanEdit = async () => {
     }
 
     const response = await axios.put(
-      `http://localhost:8080/api/v1/plans/${draft.id}`,
+      `/api/v1/plans/${draft.id}`,
       payload,
       { withCredentials: true },
     )
@@ -229,7 +229,7 @@ const deletePlan = async (plan) => {
   planDeleteError.value = ''
   planDeleteErrorId.value = null
   try {
-    await axios.delete(`http://localhost:8080/api/v1/plans/${plan.id}`, {
+    await axios.delete(`/api/v1/plans/${plan.id}`, {
       withCredentials: true,
     })
     myPlans.value = myPlans.value.filter((item) => item.id !== plan.id)
