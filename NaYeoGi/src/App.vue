@@ -16,12 +16,12 @@ onMounted(() => {
 const isLandingPage = computed(() => route.name === 'landing' || route.name === 'login')
 const isAttractionSelect = computed(() => route.name === 'attraction-select')
 
-// 배경 슬라이드 이미지 목록
+// 배경 슬라이드 이미지 목록 (테마: 사계절 - 봄, 여름, 가을, 겨울)
 const bgImages = ref([
-  'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1522748906645-95d8adfd52c7?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1476820865390-c52aeebb9891?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?auto=format&fit=crop&w=1920&q=80',
 ])
 </script>
 
