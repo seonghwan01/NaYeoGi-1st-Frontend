@@ -31,6 +31,7 @@ const visibleAttractions = ref([])
 const mapContainer = ref(null)
 const mapInstance = ref(null)
 const markers = ref([])
+const markerImages = ref({ default: null, selected: null })
 
 const normalizedQueryTypes = computed(() => {
   const value = route.query.contentTypeId
@@ -55,8 +56,50 @@ const syncCategoryFromRoute = () => {
 const getCardId = (id) => `attraction-card-${id}`
 
 const cleanupMarkers = () => {
-  markers.value.forEach((marker) => marker.setMap(null))
+  markers.value.forEach(({ marker }) => marker.setMap(null))
   markers.value = []
+}
+
+const createMarkerImage = (kakao, fillColor) => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="35" viewBox="0 0 24 35">
+  <path d="M12 0C6.477 0 2 4.477 2 10c0 7.5 10 25 10 25s10-17.5 10-25C22 4.477 17.523 0 12 0z" fill="${fillColor}" stroke="#ffffff" stroke-width="1.4"/>
+  <circle cx="12" cy="10.5" r="4.2" fill="#ffffff"/>
+</svg>`
+  const imageSrc = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
+  const size = new kakao.maps.Size(24, 35)
+  const options = { offset: new kakao.maps.Point(12, 35) }
+  return new kakao.maps.MarkerImage(imageSrc, size, options)
+}
+
+const initMarkerImages = (kakao) => {
+  if (markerImages.value.default && markerImages.value.selected) return
+  markerImages.value = {
+    default: createMarkerImage(kakao, '#ef4444'),
+    selected: createMarkerImage(kakao, '#f97316')
+  }
+}
+
+const createMarker = (kakao, attraction, { selected = false } = {}) => {
+  initMarkerImages(kakao)
+  const position = toLatLng(kakao, attraction)
+  if (!position) return null
+  const image = selected ? markerImages.value.selected : markerImages.value.default
+  const marker = new kakao.maps.Marker({ position, image })
+  marker.setMap(mapInstance.value)
+  kakao.maps.event.addListener(marker, 'click', () => {
+    selectedId.value = attraction.id
+    updateMarkerSelection(attraction.id)
+    scrollToCard(attraction.id)
+  })
+  return marker
+}
+
+const updateMarkerSelection = (id) => {
+  if (!markerImages.value.default || !markerImages.value.selected) return
+  markers.value.forEach(({ id: markerId, marker }) => {
+    const image = markerId === id ? markerImages.value.selected : markerImages.value.default
+    marker.setImage(image)
+  })
 }
 
 const toLatLng = (kakao, attraction) => {
@@ -103,12 +146,12 @@ const isMapReady = () =>
     typeof mapInstance.value.setCenter === 'function'
   )
 
-const placeSingleMarker = (latLng) => {
+const placeSingleMarker = (attraction, latLng) => {
   if (!isMapReady() || !latLng || !window.kakao?.maps) return
   cleanupMarkers()
-  const marker = new window.kakao.maps.Marker({ position: latLng })
-  marker.setMap(mapInstance.value)
-  markers.value = [marker]
+  const marker = createMarker(window.kakao, attraction, { selected: true })
+  if (!marker) return
+  markers.value = [{ id: attraction.id, marker }]
 }
 
 const focusOnAttraction = (attraction) => {
@@ -118,7 +161,8 @@ const focusOnAttraction = (attraction) => {
   if (!latLng) return
 
   selectedId.value = attraction.id
-  placeSingleMarker(latLng)
+  placeSingleMarker(attraction, latLng)
+  updateMarkerSelection(attraction.id)
   safeSetCenter(latLng)
   safeSetLevel(attraction.map_level ?? 6)
   updateVisibleList()

@@ -36,6 +36,7 @@
               :key="attraction.id"
               class="card"
               :class="{ active: selectedId === attraction.id }"
+              :ref="(el) => setCardRef(el, attraction.id)"
               @click="focusOnAttraction(attraction)"
             >
               <div class="thumb">
@@ -105,10 +106,6 @@
           </div>
          
           <div class="list-actions">
-             <button v-if="selectedId" type="button" class="primary-btn" @click="showAllMarkers">
-            전체 마커 보기
-          </button>
-          <div><span> </span></div>
             <button type="button" class="primary-btn" :disabled="selectedAttractions.length === 0" @click="goPlan">
               계획 만들기
             </button>
@@ -121,7 +118,7 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { loadKakaoMaps } from '@/restapi/attraction'
@@ -154,15 +151,46 @@ const {
 const mapContainer = ref(null)
 const mapInstance = ref(null)
 const markers = ref([])
+const markerImages = ref({ default: null, selected: null })
+const cardRefs = ref({})
+
+const setCardRef = (el, id) => {
+  if (!id) return
+  if (el) {
+    cardRefs.value[id] = el
+  } else {
+    delete cardRefs.value[id]
+  }
+}
 
 const cleanupMarkers = () => {
-  markers.value.forEach((marker) => marker.setMap(null))
+  markers.value.forEach(({ marker }) => marker.setMap(null))
   markers.value = []
 }
 
+const createMarkerImage = (kakao, fillColor) => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="35" viewBox="0 0 24 35">
+  <path d="M12 0C6.477 0 2 4.477 2 10c0 7.5 10 25 10 25s10-17.5 10-25C22 4.477 17.523 0 12 0z" fill="${fillColor}" stroke="#ffffff" stroke-width="1.4"/>
+  <circle cx="12" cy="10.5" r="4.2" fill="#ffffff"/>
+</svg>`
+  const imageSrc = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
+  const size = new kakao.maps.Size(24, 35)
+  const options = { offset: new kakao.maps.Point(12, 35) }
+  return new kakao.maps.MarkerImage(imageSrc, size, options)
+}
+
+const initMarkerImages = (kakao) => {
+  if (markerImages.value.default && markerImages.value.selected) return
+  markerImages.value = {
+    default: createMarkerImage(kakao, '#3b82f6'),
+    selected: createMarkerImage(kakao, '#ef4444')
+  }
+}
+
 const createMarker = (kakao, attraction) => {
+  initMarkerImages(kakao)
   const position = new kakao.maps.LatLng(attraction.latitude, attraction.longitude)
-  const marker = new kakao.maps.Marker({ position })
+  const marker = new kakao.maps.Marker({ position, image: markerImages.value.default })
   marker.setMap(mapInstance.value)
 
   kakao.maps.event.addListener(marker, 'click', () => focusOnAttraction(attraction))
@@ -171,7 +199,10 @@ const createMarker = (kakao, attraction) => {
 
 const renderAllMarkers = (kakao) => {
   cleanupMarkers()
-  markers.value = displayedAttractions.value.map((item) => createMarker(kakao, item))
+  markers.value = displayedAttractions.value.map((item) => ({
+    id: item.id,
+    marker: createMarker(kakao, item)
+  }))
   if (displayedAttractions.value.length > 0) {
     const first = displayedAttractions.value[0]
     mapInstance.value.setCenter(new kakao.maps.LatLng(first.latitude, first.longitude))
@@ -183,21 +214,28 @@ const renderAllMarkers = (kakao) => {
   setSelectedId(null)
 }
 
+const updateMarkerSelection = (id) => {
+  if (!markerImages.value.default || !markerImages.value.selected) return
+  markers.value.forEach(({ id: markerId, marker }) => {
+    const image = markerId === id ? markerImages.value.selected : markerImages.value.default
+    marker.setImage(image)
+  })
+}
+
 const focusOnAttraction = (attraction) => {
   if (!window.kakao?.maps || !mapInstance.value) return
   const kakao = window.kakao
   setSelectedId(attraction.id)
 
-  cleanupMarkers()
-  const singleMarker = createMarker(kakao, attraction)
-  markers.value = [singleMarker]
+  if (markers.value.length === 0 && displayedAttractions.value.length > 0) {
+    markers.value = displayedAttractions.value.map((item) => ({
+      id: item.id,
+      marker: createMarker(kakao, item)
+    }))
+  }
+  updateMarkerSelection(attraction.id)
   mapInstance.value.setCenter(new kakao.maps.LatLng(attraction.latitude, attraction.longitude))
   mapInstance.value.setLevel(attraction.map_level ?? 5)
-}
-
-const showAllMarkers = () => {
-  if (!window.kakao?.maps) return
-  renderAllMarkers(window.kakao)
 }
 
 const switchTab = async (key) => {
@@ -247,6 +285,20 @@ watch(
     }
   },
   { immediate: false }
+)
+
+watch(
+  selectedId,
+  async (id) => {
+    updateMarkerSelection(id)
+    if (!id) return
+    await nextTick()
+    const target = cardRefs.value[id]
+    if (target?.scrollIntoView) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  },
+  { flush: 'post' }
 )
 
 onMounted(async () => {
