@@ -8,9 +8,7 @@ const router = useRouter()
 const memberStore = useMemberStore()
 
 // 1. 상태 변수들
-// 여기서 탭 관리를 위한 상태 변수와 회원 정보, 여행 계획, 스토리북 데이터를 정의합니다.
-const activeTab = ref('plans') // 현재 선택된 탭 (info, plans, stories)
-const userInfo = ref({}) // 내 정보 담을 객체
+const activeTab = ref('plans') // 현재 선택된 탭 (plans, stories)
 const myPlans = ref([]) // 내 여행 계획 리스트
 const isPlansLoading = ref(false)
 const planError = ref('')
@@ -20,10 +18,6 @@ const editingPlanId = ref(null)
 const editingPlanDraft = ref(null)
 const isSavingPlan = ref(false)
 const planSaveError = ref('')
-
-// 배경 이미지 (로그인 페이지와 통일감)
-// const bgImage =
-//   'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1600&q=80'
 
 const normalizePlans = (planList) =>
   planList
@@ -90,7 +84,6 @@ const sortedPlans = computed(() => {
 
 const fetchMemberInfo = async () => {
   if (memberStore.userInfo && memberStore.userInfo.userId) {
-    userInfo.value = { ...memberStore.userInfo }
     planOwnerId.value = memberStore.userInfo.userId
     return memberStore.userInfo.userId
   }
@@ -100,7 +93,6 @@ const fetchMemberInfo = async () => {
       withCredentials: true,
     })
     const memberData = response.data?.data ?? response.data
-    userInfo.value = memberData
     if (memberData?.userId) {
       planOwnerId.value = memberData.userId
       memberStore.userInfo = memberData
@@ -109,10 +101,6 @@ const fetchMemberInfo = async () => {
     return memberData?.userId
   } catch (error) {
     console.error('회원 정보 로드 실패', error)
-    if (error.response) {
-      console.log('서버 응답 상태:', error.response.status)
-      console.log('서버 응답 데이터:', error.response.data)
-    }
     alert('로그인이 필요합니다.')
     return null
   }
@@ -228,72 +216,12 @@ const savePlanEdit = async () => {
     isSavingPlan.value = false
   }
 }
-
-// 3. 회원 정보 수정 로직
-const updateMember = async () => {
-  try {
-    // 1. 백엔드(DB) 업데이트 요청
-    await axios.put('http://localhost:8080/api/v1/members/me', userInfo.value, {
-      withCredentials: true,
-    })
-
-    // 2. [핵심] 프론트엔드 스토어(Pinia) 정보도 즉시 갱신
-    // 이렇게 해야 헤더가 이 변경사항을 감지하고 이름을 바꿉니다.
-    if (memberStore.userInfo) {
-      memberStore.userInfo.userName = userInfo.value.userName
-      memberStore.userInfo.email = userInfo.value.email // 이메일도 바꿨다면 갱신
-    }
-
-    alert('회원 정보가 수정되었습니다!')
-  } catch (error) {
-    console.error(error)
-    alert('수정에 실패했습니다.')
-  }
-}
-
-// 4. 회원 탈퇴 로직
-const deleteMember = async () => {
-  // 1. 실수 방지를 위한 확인창
-  if (!confirm('정말로 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return
-
-  try {
-    // 2. 백엔드에 탈퇴 요청 (세션 쿠키 포함 필수!)
-    await axios.delete('http://localhost:8080/api/v1/members/me', {
-      withCredentials: true,
-    })
-
-    alert('탈퇴 처리되었습니다. 그동안 이용해 주셔서 감사합니다.')
-
-    // 3. [중요] 프론트엔드 로그인 상태 초기화
-    // (Pinia 스토어에 있는 내 정보와 로그인 상태를 날려버립니다)
-    // memberStore에 logout 액션이 있다면 그걸 호출하는 것이 가장 깔끔합니다.
-    if (memberStore.logout) {
-      memberStore.logout()
-    }
-    // 4. [중요] 랜딩 페이지(메인)로 이동
-    // router.push('/')는 페이지만 이동하고 새로고침은 안 됩니다.
-    // 헤더(GNB)의 로그인 상태까지 확실하게 갱신하려면 아래 방법을 추천합니다.
-    window.location.href = '/'
-  } catch (error) {
-    console.error(error)
-    alert('탈퇴 처리에 실패했습니다. 다시 시도해주세요.')
-  }
-}
-
-// (임시) 여행 계획/스토리북 데이터 로드 함수 예시
-/*
-const fetchMyPlans = async () => {
-    const res = await axios.get(`http://localhost:8080/api/v1/plans/my`)
-    myPlans.value = res.data.data
-}
-*/
 </script>
 
 <template>
   <div
     class="min-vh-100 w-100 position-relative d-flex align-items-center justify-content-center text-white"
     :style="{
-      backgroundImage: `url(${bgImage})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
     }"
@@ -323,54 +251,13 @@ const fetchMyPlans = async () => {
               >
                 📖 스토리북
               </button>
-              <button
-                class="list-group-item list-group-item-action bg-transparent text-white border-0 py-3 fw-bold"
-                :class="{ 'active-menu': activeTab === 'info' }"
-                @click="activeTab = 'info'"
-              >
-                👤 회원 정보 수정
-              </button>
             </div>
           </div>
         </div>
 
         <div class="col-md-9">
           <div class="library-card p-5 rounded-4 h-100">
-            <div v-if="activeTab === 'info'">
-              <h4 class="mb-4 fw-bold">회원 정보 관리</h4>
-              <form @submit.prevent="updateMember">
-                <div class="mb-3">
-                  <label class="form-label">아이디</label>
-                  <input type="text" class="form-control" v-model="userInfo.userId" disabled />
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">이름</label>
-                  <input type="text" class="form-control" v-model="userInfo.userName" />
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">이메일</label>
-                  <input type="email" class="form-control" v-model="userInfo.email" />
-                </div>
-                <div class="mb-4">
-                  <label class="form-label">새 비밀번호 (변경 시에만 입력)</label>
-                  <input
-                    type="password"
-                    class="form-control"
-                    v-model="userInfo.userPassword"
-                    placeholder="변경하려면 입력하세요"
-                  />
-                </div>
-
-                <div class="d-flex justify-content-between">
-                  <button type="submit" class="btn btn-primary fw-bold px-4">정보 수정</button>
-                  <button type="button" @click="deleteMember" class="btn btn-danger fw-bold px-4">
-                    회원 탈퇴
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            <div v-else-if="activeTab === 'plans'">
+            <div v-if="activeTab === 'plans'">
               <h4 class="mb-4 fw-bold">✈️ 나의 여행 계획</h4>
               <div v-if="isPlansLoading" class="text-center py-5 text-white-50">
                 <div class="spinner-border text-light" role="status">

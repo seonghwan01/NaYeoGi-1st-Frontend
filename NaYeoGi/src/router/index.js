@@ -25,6 +25,11 @@ const router = createRouter({
       component: () => import('@/views/common/MyPage.vue'),
     },
     {
+      path: '/member-info',
+      name: 'member-info',
+      component: () => import('@/views/member/MemberInfoView.vue'),
+    },
+    {
       path: '/main',
       name: 'main',
       component: () => import('@/views/common/TheMainView.vue'),

@@ -71,7 +71,7 @@ const navigate = (path) => {
 
           <template v-else>
             <li class="nav-item" v-if="userInfo">
-              <span class="nav-link fw-bold">{{ userInfo.userName }}님</span>
+              <a href="#" @click.prevent="navigate('/member-info')" class="nav-link fw-bold">{{ userInfo.userName }}님</a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="#" @click.prevent="navigate('/mypage')">내 서재</a>
