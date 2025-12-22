@@ -1,15 +1,13 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { Carousel } from 'bootstrap';
 import ContentCard from '@/components/common/ContentCard.vue';
 
 const router = useRouter();
 
 // 캐러셀 이미지 URL 배열
 const carouselImages = ref([
-  "/public/img/story_image.png",
-  "https://images.unsplash.com/photo-1503220317375-aaad61436b1b?auto=format&fit=crop&w=800&q=80",
+  "/public/img/story_image.png"
 ]);
 
 const IMG_MAP = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80";
@@ -23,16 +21,6 @@ const CATEGORY_ITEMS = [
   { key: 'stay', label: '숙박', types: [32], accent: '#6366f1', desc: '편안한 숙소 찾기' },
   { key: 'shopping', label: '쇼핑', types: [38], accent: '#f59e0b', desc: '쇼핑 명소' },
 ];
-
-onMounted(() => {
-  const carouselElement = document.getElementById('imageCarousel');
-  if (carouselElement) {
-    const carousel = new Carousel(carouselElement, {
-      interval: 3000,
-      ride: 'carousel',
-    });
-  }
-});
 
 // 페이지 이동 함수
 const goStorybook = () => router.push('/Mypage'); // 추후 생성 필요
