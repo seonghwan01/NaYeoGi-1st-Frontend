@@ -10,7 +10,7 @@ const carouselImages = ref([
   "/public/img/story_image.png"
 ]);
 
-const IMG_MAP = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80";
+const IMG_MAP = "/public/img/attraction.png";
 
 const CATEGORY_ITEMS = [
   { key: 'attraction', label: '관광지', types: [12], accent: '#2563eb', desc: '랜드마크와 명소' },
