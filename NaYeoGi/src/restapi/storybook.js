@@ -3,12 +3,7 @@
  *
  * @todo 백엔드 API 명세에 맞춰 실제 요청 로직 구현 필요
  */
-import axios from "axios";
-
-// Axios 인스턴스 생성 (필요에 따라 설정 추가)
-const restApi = axios.create({
-  baseURL: "http://localhost:8080/api/v1",
-});
+import apiClient from "./common";
 
 
 // /**
@@ -17,7 +12,7 @@ const restApi = axios.create({
 //  * @returns {Promise} - Axios 응답 Promise
 //  */
 // export const generateDraft = (payload) => {
-//   // return restApi.post('/api/v1/stories/draft', payload);
+//   // return apiClient.post('/api/v1/stories/draft', payload);
 //   console.log('API 요청: AI 초안 생성', payload);
 //   // 실제 구현 전까지는 성공을 가정하고 Promise를 반환합니다.
 //   return Promise.resolve({
@@ -33,7 +28,7 @@ const restApi = axios.create({
 //  * @returns {Promise} - Axios 응답 Promise
 //  */
 // export const saveStory = (finalStory) => {
-//   // return restApi.post('/stories', finalStory);
+//   // return apiClient.post('/stories', finalStory);
 //   console.log('API 요청: 최종 스토리 저장', finalStory);
 //   // 실제 구현 전까지는 성공을 가정하고 Promise를 반환합니다.
 //   return Promise.resolve({
@@ -50,11 +45,6 @@ export const generateAiStoryApi = async (storyData) => {
   // 이미지 URL 배열을 순수한 문자열 URL 배열로 변환
   transformedStoryData.storyDays.forEach(day => {
     day.sections.forEach(section => {
-      // selectedTags를 atmosphereTags로 변경 (백엔드 DTO와 일치)
-      if (section.selectedTags) {
-        section.atmosphereTags = section.selectedTags;
-        delete section.selectedTags;
-      }
 
       if (section.imageUrls && Array.isArray(section.imageUrls)) {
         section.imageUrls = section.imageUrls
@@ -67,14 +57,14 @@ export const generateAiStoryApi = async (storyData) => {
   });
 
   // 백엔드: StoryController의 @PostMapping("/stories/ai-generate")
-  const response = await restApi.post("/stories/ai-generate", transformedStoryData);
+  const response = await apiClient.post("/stories/ai-generate", transformedStoryData);
   return response.data.data; // ApiResponse 구조에 따라 .data.data
 };
 
 // 2. 최종 저장 요청
 export const saveStoryApi = async (finalData) => {
   // 백엔드: StoryController의 @PostMapping("/stories")
-  const response = await restApi.post("/stories", finalData);
+  const response = await apiClient.post("/stories", finalData);
   return response.data.data;
 };
 /**

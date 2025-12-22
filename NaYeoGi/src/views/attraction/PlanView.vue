@@ -47,7 +47,7 @@
         </div>
 
         <div class="info-row">
-          <div class="muted">총 {{ totalAttractionCount }}곳 · 날짜별 순서로 저장됩니다.</div>
+          <div class="muted"><!--총 {{ totalAttractionCount }}곳 · 날짜별 순서로 저장됩니다.--></div>
           <button type="button" class="primary-btn" :disabled="isSubmitting" @click="submitPlan">
             {{ isSubmitting ? '저장 중...' : '계획 저장' }}
           </button>
@@ -62,7 +62,7 @@
             <p class="eyebrow small">일정 구성</p>
             <h2 class="list-title">방문을 원하시는 날짜에 드래그 해주세요</h2>
           </div>
-          <div class="muted">날짜 칸에 순서를 정리한 그대로 저장됩니다.</div>
+          <div class="muted">날짜별로 여행지 방문 순서를 정해주세요.</div>
         </div>
         <div v-if="!scheduleDays.length" class="empty">
           여행 기간을 선택하면 날짜별 칸이 생성됩니다.
