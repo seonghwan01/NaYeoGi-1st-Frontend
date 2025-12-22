@@ -1,59 +1,14 @@
 <template>
   <div class="select-page">
-    <header class="page-header">
+
+    <ContentCard>
       <div>
         <p class="eyebrow">맞춤 추천</p>
         <h1 class="title">선호도 기반 추천 여행지</h1>
       </div>
-      <button v-if="selectedId" type="button" class="ghost-btn" @click="showAllMarkers">
-        전체 마커 보기
-      </button>
-    </header>
-
-    <ContentCard>
+      
+      <br><br>
       <div class="layout">
-        <section class="selected-panel">
-          <header class="selected-header">
-            <div>
-              <p class="eyebrow small">선택한 장소</p>
-              <h2 class="selected-title">총 {{ selectedAttractions.length }}곳</h2>
-            </div>
-            <button v-if="selectedAttractions.length" type="button" class="ghost-btn sm" @click="clearSelections">
-              모두 비우기
-            </button>
-          </header>
-          <div class="selected-actions-row">
-            <button type="button" class="primary-btn" :disabled="selectedAttractions.length === 0" @click="goPlan">
-              계획 만들기
-            </button>
-            <p class="muted">{{ selectedAttractions.length ? '순서를 다음 단계에서 조정합니다.' : '최소 1개 이상 선택하세요.' }}</p>
-          </div>
-          <div v-if="selectedAttractions.length === 0" class="empty-selected">선택한 장소가 없습니다.</div>
-          <div v-else class="selected-list">
-            <article v-for="item in selectedAttractions" :key="item.id" class="selected-card">
-              <div class="selected-thumb">
-                <img v-if="item.first_image1" :src="item.first_image1" :alt="item.title" />
-                <div v-else class="thumb-fallback">No Image</div>
-              </div>
-              <div class="selected-body">
-                <div class="selected-top">
-                  <div class="selected-name">{{ item.title }}</div>
-                  <span class="selected-badge">{{ resolveCategoryLabel(item.content_type_id) }}</span>
-                </div>
-                <div class="selected-addr">{{ item.addr1 }}</div>
-                <div class="selected-actions">
-                  <button type="button" class="ghost-btn sm" @click="focusOnAttraction(item)">지도 보기</button>
-                  <button type="button" class="remove-btn" @click="removeSelection(item.id)">삭제</button>
-                </div>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <div class="map-pane">
-          <div ref="mapContainer" class="map-canvas"></div>
-        </div>
-
         <section class="list-pane">
           <header class="list-header">
             <div>
@@ -107,7 +62,59 @@
               </div>
             </article>
           </div>
+
+
         </section>
+        
+
+        <div class="map-pane">
+          <div ref="mapContainer" class="map-canvas"></div>
+        </div>
+        <section class="selected-panel">
+          <header class="selected-header">
+            <div>
+              <p class="eyebrow small">선택한 장소</p>
+              <h2 class="selected-title">총 {{ selectedAttractions.length }}곳</h2>
+            </div>
+            <button v-if="selectedAttractions.length" type="button" class="ghost-btn sm" @click="clearSelections">
+              모두 비우기
+            </button>
+          </header>
+          <div class="selected-actions-row">
+            <p class="muted">{{ selectedAttractions.length ? '순서를 다음 단계에서 조정합니다.' : '최소 1개 이상 선택하세요.' }}</p>
+          </div>
+          <div v-if="selectedAttractions.length === 0" class="empty-selected">선택한 장소가 없습니다.</div>
+          <div v-else class="selected-list">
+            <article v-for="item in selectedAttractions" :key="item.id" class="selected-card">
+              <div class="selected-thumb">
+                <img v-if="item.first_image1" :src="item.first_image1" :alt="item.title" />
+                <div v-else class="thumb-fallback">No Image</div>
+              </div>
+              <div class="selected-body">
+                <div class="selected-top">
+                  <div class="selected-name">{{ item.title }}</div>
+                  <span class="selected-badge">{{ resolveCategoryLabel(item.content_type_id) }}</span>
+                </div>
+                <div class="selected-addr">{{ item.addr1 }}</div>
+                <div class="selected-actions">
+                  <button type="button" class="ghost-btn sm" @click="focusOnAttraction(item)">지도 보기</button>
+                  <button type="button" class="remove-btn" @click="removeSelection(item.id)">삭제</button>
+                </div>
+              </div>
+            </article>
+          </div>
+         
+          <div class="list-actions">
+             <button v-if="selectedId" type="button" class="primary-btn" @click="showAllMarkers">
+            전체 마커 보기
+          </button>
+          <div><span> </span></div>
+            <button type="button" class="primary-btn" :disabled="selectedAttractions.length === 0" @click="goPlan">
+              계획 만들기
+            </button>
+          </div>
+        </section>
+        
       </div>
     </ContentCard>
   </div>
@@ -273,8 +280,6 @@ const goPlan = () => {
 <style scoped>
 .select-page {
   min-height: 100vh;
-  /* background: #f7f9fb; - 제거 */
-  /* padding: 20px; - 제거 */
   color: #1f2d3d;
 }
 
@@ -282,9 +287,14 @@ const goPlan = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  max-width: 1200px;
+  width: min(88vw, 1760px); /* 95vw, 2000px */
   margin: 0 auto 18px;
-  padding-top: 20px; /* 위쪽 패딩만 유지 */
+  padding-top: 20px; 
+}
+
+.select-page :deep(.content-card) {
+  width: min(88vw, 1760px);
+  margin: 0 auto;
 }
 
 .eyebrow {
@@ -321,7 +331,7 @@ const goPlan = () => {
   display: grid;
   grid-template-columns: 1fr 1.2fr 1fr;
   gap: 16px;
-  max-width: 1480px;
+  max-width: 100%;
   margin: 0 auto;
 }
 
@@ -645,6 +655,13 @@ const goPlan = () => {
   margin-top: 4px;
 }
 
+.list-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+  gap: 5px;
+}
+
 .ghost-btn.sm {
   padding: 6px 10px;
   border-radius: 8px;
@@ -664,6 +681,10 @@ const goPlan = () => {
 
   .list-pane {
     max-height: none;
+  }
+
+  .map-pane {
+    height: 420px;
   }
 }
 
