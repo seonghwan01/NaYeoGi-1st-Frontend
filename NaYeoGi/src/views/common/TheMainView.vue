@@ -8,7 +8,7 @@ const router = useRouter();
 
 // 캐러셀 이미지 URL 배열
 const carouselImages = ref([
-  "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80",
+  "/public/img/story_image.png",
   "https://images.unsplash.com/photo-1503220317375-aaad61436b1b?auto=format&fit=crop&w=800&q=80",
 ]);
 
