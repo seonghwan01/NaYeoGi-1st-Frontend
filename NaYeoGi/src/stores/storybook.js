@@ -11,6 +11,7 @@ import { generateAiStoryApi, saveStoryApi, getStoryById } from "@/restapi/storyb
   // UI 로딩 상태를 관리합니다. (예: 스피너 표시)
   const isLoading = ref(false);
   const currentStory = reactive({
+    planId: null,       // 연결된 여행 계획의 ID
     storyTitle: "",     // 예: "우정 가득 제주도 3박 4일 여행"
     startDate: "",      // 예: "2024-05-10"
     endDate: "",        // 예: "2024-05-13"
@@ -31,6 +32,7 @@ import { generateAiStoryApi, saveStoryApi, getStoryById } from "@/restapi/storyb
   // store를 초기화하거나 리셋하는 액션
   function resetCurrentStory() {
     Object.assign(currentStory, {
+      planId: "",
       storyTitle: "",
       startDate: "",
       endDate: "",
@@ -139,13 +141,14 @@ import { generateAiStoryApi, saveStoryApi, getStoryById } from "@/restapi/storyb
    * @param {object} plan - planStore.selectedPlan에서 받아온 계획 객체
    */
   function syncWithPlanData(plan) {
-    if (!plan || !plan.startDate || !plan.endDate) {
-      console.error("동기화할 Plan 데이터가 올바르지 않습니다. (날짜 정보 누락)");
+    if (!plan || !plan.startDate || !plan.endDate || !plan.id) {
+      console.error("동기화할 Plan 데이터가 올바르지 않습니다. (id, 날짜 정보 누락)");
       resetCurrentStory();
       return;
     }
 
     // 1. 기본 정보 설정
+    currentStory.planId = plan.id; // planId 저장
     currentStory.storyTitle = `${plan.title}의 기록`;
     currentStory.startDate = plan.startDate;
     currentStory.endDate = plan.endDate;
