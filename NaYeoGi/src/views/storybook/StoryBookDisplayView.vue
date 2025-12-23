@@ -127,7 +127,16 @@ const groupImagesToCarousel = () => {
 
     } else if (images.length === 1) {
       // --- [1개: 중앙 정렬] ---
-      images[0].classList.add('single-image');
+      const wrapper = document.createElement('div');
+      wrapper.className = 'single-image-wrapper';
+      
+      const clonedImg = images[0].cloneNode(true);
+      clonedImg.className = 'single-image';
+      clonedImg.addEventListener('click', () => openModal(clonedImg.src));
+      
+      wrapper.appendChild(clonedImg);
+      p.style.display = 'none';
+      p.parentNode.insertBefore(wrapper, p.nextSibling);
     }
   });
 };
@@ -239,17 +248,21 @@ const onTogglePublic = async () => {
 }
 .carousel-nav-btn.prev { left: -20px; } .carousel-nav-btn.next { right: -20px; }
 
-.image-scroll-container { display: flex; overflow-x: auto; gap: 1rem; padding: 1rem 0; width: 100%; cursor: grab; scroll-behavior: smooth; scrollbar-width: none; }
+.image-scroll-container { display: flex; overflow-x: auto; gap: 1.5rem; padding: 1rem 5px; width: 100%; cursor: grab; scroll-behavior: smooth; scrollbar-width: none; align-items: center; }
 .image-scroll-container::-webkit-scrollbar { display: none; }
 .image-scroll-container.active { cursor: grabbing; scroll-behavior: auto; }
-.image-wrapper { flex: 0 0 auto; width: 300px; user-select: none; }
-.carousel-image { width: 100%; height: 250px; object-fit: cover; border-radius: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.08); transition: transform 0.3s; }
+
+/* 3개 이상: Wrapper는 이미지의 자연스러운 너비를 따름 */
+.image-wrapper { flex: 0 0 auto; height: 350px; width: auto; user-select: none; border-radius: 1rem; display: flex; align-items: center; }
+/* 이미지 자체: 높이를 꽉 채우고 너비는 비율에 맞게 */
+.carousel-image { height: 100%; width: auto; max-width: none; border-radius: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: transform 0.3s; }
 
 /* 2개일 때: 화살표 없이 가로 나열 */
 .simple-gallery.dual { display: flex; justify-content: center; gap: 1.5rem; margin: 2.5rem 0; }
-.gallery-image { width: 48%; max-height: 400px; object-fit: cover; border-radius: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.1); cursor: zoom-in; }
+.gallery-image { width: 45%; max-height: 350px; object-fit: contain; background-color: rgba(0,0,0,0.03); border-radius: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.1); cursor: zoom-in; }
 
-.single-image { width: 100%; max-height: 500px; object-fit: cover; border-radius: 1rem; margin: 2rem 0; box-shadow: 0 4px 20px rgba(0,0,0,0.1); cursor: zoom-in; }
+.single-image-wrapper { text-align: center; margin: 2.5rem 0; }
+.single-image { display: inline-block; max-width: 90%; max-height: 500px; height: auto; border-radius: 1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1); cursor: zoom-in; }
 
 /* --- Floating Bar & Tooltip --- */
 .floating-action-bar { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.527); backdrop-filter: blur(10px); padding: 0.75rem 1rem; border-radius: 50rem; border: 1px solid rgba(255, 255, 255, 0.5); display: flex; align-items: center; z-index: 1000; box-shadow: 0 8px 32px rgba(0,0,0,0.1); transition: all 0.3s ease; }
