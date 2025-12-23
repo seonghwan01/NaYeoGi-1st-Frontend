@@ -29,7 +29,7 @@
           <div class="icon">✨</div>
           <h2 class="title">내가 원하는 여행은?</h2>
           <p class="subtitle">원하는 여행 테마들을 선택해주세요</p>
-          <div class="chips">
+          <div class="chips topic-chips">
             <div v-if="topicError" class="chip chip-error">{{ topicError }}</div>
             <template v-else>
               <button
@@ -40,7 +40,7 @@
                 :class="{ active: selectedTopics.includes(topic.id) }"
                 @click="toggleTopic(topic.id)"
               >
-                #{{ topic.question }}
+                # {{ topic.question }}
               </button>
             </template>
           </div>
@@ -165,6 +165,10 @@ onMounted(() => {loadTopics() })
   gap: 12px;
 }
 
+.topic-chips {
+  grid-template-columns: repeat(5, 1fr);
+}
+
 .chip {
   border: 1px solid #e5e7eb;
   background: #fff;
@@ -243,6 +247,12 @@ onMounted(() => {loadTopics() })
   text-align: center;
 }
 
+@media (max-width: 1024px) {
+  .topic-chips {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 @media (max-width: 640px) {
   .survey-card {
     padding: 22px 18px 18px;
@@ -254,6 +264,16 @@ onMounted(() => {loadTopics() })
 
   .chips {
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  }
+
+  .topic-chips {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .topic-chips {
+    grid-template-columns: 1fr;
   }
 }
 </style>

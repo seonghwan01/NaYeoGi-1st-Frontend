@@ -5,6 +5,7 @@ import { storeToRefs } from 'pinia'
 import ContentCard from '@/components/common/ContentCard.vue'
 import { loadKakaoMaps } from '@/restapi/attraction'
 import { ATTRACTION_CATEGORY_GROUPS, useAttractionStore } from '@/stores/attractions'
+import { TOP_100_ATTRACTIONS } from '@/constants/attraction/top100'
 
 const IDLE_DEBOUNCE_MS = 1000
 const MAX_MARKERS = 100000
@@ -28,6 +29,7 @@ const {
 const selectedId = ref(null)
 const visibleAttractions = ref([])
 const cardListRef = ref(null)
+const viewMode = ref('top') // 'all' | 'top'
 
 const mapContainer = ref(null)
 const mapInstance = ref(null)
@@ -181,8 +183,56 @@ const scrollToCard = (id) => {
 }
 
 const updateVisibleList = () => {
-  // 지도 범위와 무관하게 불러온 전체 목록(상한선 MAX_MARKERS)을 표시
-  visibleAttractions.value = attractions.value.slice(0, MAX_MARKERS)
+  let list = [...attractions.value]
+
+  if (viewMode.value === 'top') {
+    // 현재 선택된 카테고리의 Top 100 ID 목록 가져오기
+    // listActiveCategory.value.types는 배열이므로 첫 번째 요소를 사용하거나
+    // 해당 카테고리에 맞는 ID 목록을 찾아야 함.
+    // 여기서는 간단히 첫 번째 타입 ID를 키로 사용한다고 가정하거나,
+    // TOP_100_ATTRACTIONS의 키와 매칭되는지 확인.
+
+    // ATTRACTION_CATEGORY_GROUPS의 구조: { types: [12], ... }
+    // TOP_100_ATTRACTIONS의 키: 12, 14, ...
+
+    const currentTypeIds = listActiveCategory.value.types || []
+    const topIds = []
+
+    // 현재 카테고리에 속한 모든 타입의 Top 100 ID를 수집
+    currentTypeIds.forEach(typeId => {
+      if (TOP_100_ATTRACTIONS[typeId]) {
+        topIds.push(...TOP_100_ATTRACTIONS[typeId])
+      }
+    })
+
+    if (topIds.length > 0) {
+      // Top 100 목록에 있는 것만 필터링
+      list = list.filter(item => topIds.includes(item.id))
+
+      // Top 100 순서대로 정렬 (indexOf 사용)
+      list.sort((a, b) => {
+        return topIds.indexOf(a.id) - topIds.indexOf(b.id)
+      })
+
+      // 카테고리가 병합(예: 15, 25)되어 100개가 넘을 경우 상위 100개만 유지
+      if (list.length > 100) {
+        list = list.slice(0, 100)
+      }
+    } else {
+      // Top 100 데이터가 없으면 vote_sum (또는 readcount) 기준으로 정렬
+      list.sort((a, b) => (b.vote_sum ?? 0) - (a.vote_sum ?? 0))
+    }
+  }
+
+  visibleAttractions.value = list.slice(0, MAX_MARKERS)
+}
+
+const setViewMode = (mode) => {
+  viewMode.value = mode
+  updateVisibleList()
+  if (cardListRef.value) {
+    cardListRef.value.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 }
 
 const fetchAttractions = async () => {
@@ -282,6 +332,24 @@ onBeforeUnmount(() => {
             <div>
               <p class="list-eyebrow">{{ listActiveCategory.label }} 목록</p>
               <p class="list-title">총 {{ visibleAttractions.length }}곳</p>
+            </div>
+            <div class="view-toggle">
+              <button
+                type="button"
+                class="toggle-btn"
+                :class="{ active: viewMode === 'all' }"
+                @click="setViewMode('all')"
+              >
+                전체
+              </button>
+              <button
+                type="button"
+                class="toggle-btn"
+                :class="{ active: viewMode === 'top' }"
+                @click="setViewMode('top')"
+              >
+                리뷰 Top 100
+              </button>
             </div>
           </header>
 
@@ -424,6 +492,32 @@ onBeforeUnmount(() => {
   margin: 2px 0 0;
   font-size: 20px;
   font-weight: 800;
+}
+
+.view-toggle {
+  display: flex;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 10px;
+  gap: 4px;
+}
+
+.toggle-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toggle-btn.active {
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
 .state {
