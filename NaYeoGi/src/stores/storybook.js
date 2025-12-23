@@ -216,10 +216,10 @@ import { generateAiStoryApi, saveStoryApi, getStoryById, getMyStories, deleteSto
     }
   }
 
-  async function fetchMyStories() {
+  async function fetchMyStories(planId = null) {
     isLoading.value = true;
     try {
-      const stories = await getMyStories();
+      const stories = await getMyStories(planId);
       myStories.value = stories;
     } catch (error) {
       console.error("내 스토리 목록 조회 실패:", error);

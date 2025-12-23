@@ -41,10 +41,15 @@ export const getStoryById = async (storyId) => {
 
 /**
  * 현재 사용자의 모든 스토리 목록을 조회합니다.
+ * @param {string | number} [planId] - 필터링할 여행 계획 ID (선택)
  * @returns {Promise<Array<object>>} - 스토리 목록 데이터
  */
-export const getMyStories = async () => {
-  const response = await apiClient.get('/stories');
+export const getMyStories = async (planId) => {
+  const params = {};
+  if (planId) {
+    params.planId = planId;
+  }
+  const response = await apiClient.get('/stories', { params });
   return response.data.data;
 };
 
