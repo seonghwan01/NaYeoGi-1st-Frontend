@@ -1,122 +1,143 @@
 <template>
-  <div class="plan-page">
-    <header class="page-header">
-      <div>
-        <p class="eyebrow">나의 여정</p>
-        <h1 class="title">여행 계획 만들기</h1>
-        <p class="sub">선택한 장소를 날짜별로 드래그해 저장하세요.</p>
-      </div>
-      <button type="button" class="ghost-btn" @click="router.push({ name: 'attraction-select' })">
-        선택 다시 하기
-      </button>
-    </header>
-
-    <main :class="['layout', { 'has-days': hasScheduleDays }]">
-      <section class="form-card">
-        <h2 class="section-title">기본 정보</h2>
-        <div class="field">
-          <label for="title">제목</label>
-          <input
-            id="title"
-            v-model="form.title"
-            type="text"
-            placeholder="예) 부산 2박 3일 가족 여행"
-            autocomplete="off"
-          />
+  <ContentCard
+    :class="['plan-content-card', { 'plan-content-card--wide': planLayout.isWide }]"
+    :style="planCardStyle"
+  >
+    <div class="plan-page" :class="{ 'is-wide': planLayout.isWide }">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">나의 여정</p>
+          <h1 class="title">여행 계획 만들기</h1>
+          <p class="sub">선택한 장소를 날짜별로 드래그해 저장하세요.</p>
         </div>
+        <button type="button" class="ghost-btn" @click="router.push({ name: 'attraction-select' })">
+          선택 다시 하기
+        </button>
+      </header>
 
-        <div class="field-row">
+      <main :class="['layout', { 'has-days': hasScheduleDays, 'is-wide': planLayout.isWide }]">
+        <section class="form-card">
+          <h2 class="section-title">기본 정보</h2>
           <div class="field">
-            <label for="start">시작일</label>
-            <input id="start" v-model="form.startDate" type="date" />
+            <label for="title">제목</label>
+            <input
+              id="title"
+              v-model="form.title"
+              type="text"
+              placeholder="예) 부산 2박 3일 가족 여행"
+              autocomplete="off"
+            />
           </div>
-          <div class="field">
-            <label for="end">종료일</label>
-            <input id="end" v-model="form.endDate" type="date" />
-          </div>
-        </div>
 
-        <div class="field">
-          <label for="description">메모</label>
-          <textarea
-            id="description"
-            v-model="form.description"
-            rows="4"
-            placeholder="일정에 대한 간단한 설명을 남겨주세요."
-          ></textarea>
-        </div>
 
-        <div class="info-row">
-          <div class="muted"><!--총 {{ totalAttractionCount }}곳 · 날짜별 순서로 저장됩니다.--></div>
-          <button type="button" class="primary-btn" :disabled="isSubmitting" @click="submitPlan">
-            {{ isSubmitting ? '저장 중...' : '계획 저장' }}
-          </button>
-        </div>
-
-        <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
-      </section>
-
-      <section class="list-card">
-        <div class="list-header">
-          <div>
-            <p class="eyebrow small">일정 구성</p>
-            <h2 class="list-title">방문을 원하시는 날짜에 드래그 해주세요</h2>
-          </div>
-          <div class="muted">날짜별로 여행지 방문 순서를 정해주세요.</div>
-        </div>
-        <div v-if="!scheduleDays.length" class="empty">
-          여행 기간을 선택하면 날짜별 칸이 생성됩니다.
-        </div>
-        <div v-else class="day-board" role="list">
-          <div
-            v-for="(day, dayIndex) in scheduleDays"
-            :key="`day-${day.planDate}`"
-            class="day-column"
-          >
-            <div class="day-header">
-              <div class="day-title">
-                <span class="day-sequence">Day {{ day.planDate }}</span>
-                <strong v-if="day.dateLabel">{{ day.dateLabel }}</strong>
-                <strong v-else>날짜 미지정</strong>
-              </div>
-              <span class="badge">{{ day.items.length }}곳</span>
+          <div class="field-row">
+            <div class="field">
+              <label for="start">시작일</label>
+              <input id="start" v-model="form.startDate" type="date" />
             </div>
-            <ul class="day-list" @dragover.prevent @drop="handleColumnDrop(dayIndex)">
-              <li
-                v-for="(item, itemIndex) in day.items"
-                :key="item.uid"
-                class="drag-card"
-                draggable="true"
-                @dragstart="handleDragStart(dayIndex, itemIndex, $event)"
-                @dragend="handleDragEnd"
-                @dragover.prevent
-                @drop.stop="handleCardDrop(dayIndex, itemIndex)"
-              >
-                <div class="drag-handle" aria-hidden="true">::</div>
-                <div class="drag-body">
-                  <div class="drag-top">
-                    <span class="order-badge">{{ itemIndex + 1 }}</span>
-                    <div class="name">{{ item.title }}</div>
-                  </div>
-                  <div class="muted">{{ item.addr1 }}</div>
-                </div>
-              </li>
-              <li v-if="!day.items.length" class="placeholder">이 날짜에 방문지를 끌어다 놓으세요.</li>
-            </ul>
+            <div class="field">
+              <label for="end">종료일</label>
+              <input id="end" v-model="form.endDate" type="date" />
+            </div>
           </div>
-        </div>
-      </section>
-    </main>
-  </div>
+
+          <div class="field">
+            <label for="description">메모</label>
+            <textarea
+              id="description"
+              v-model="form.description"
+              rows="4"
+              placeholder="일정에 대한 간단한 설명을 남겨주세요."
+            ></textarea>
+          </div>
+
+          <div class="info-row">
+            <div class="muted"><!--총 {{ totalAttractionCount }}곳 · 날짜별 순서로 저장됩니다.--></div>
+            <button type="button" class="primary-btn" :disabled="isSubmitting" @click="submitPlan">
+              {{ isSubmitting ? '저장 중...' : '계획 저장' }}
+            </button>
+          </div>
+
+          <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
+          <div class="map-section">
+            <div class="map-header">
+              <h3 class="map-title">여행지 위치</h3>
+              <p class="muted">날짜별 순서가 지도에 표시됩니다.</p>
+            </div>
+            <div class="map-pane">
+              <div ref="mapContainer" class="map-canvas"></div>
+              <div v-if="!mapItems.length" class="map-empty">
+                여행 기간을 선택하면 지도에 위치가 표시됩니다.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="list-card">
+          <div class="list-header">
+            <div>
+              <p class="eyebrow small">일정 구성</p>
+              <h2 class="list-title">방문을 원하시는 날짜에 드래그 해주세요</h2>
+            </div>
+            <div class="muted">날짜별로 여행지 방문 순서를 정해주세요.</div>
+          </div>
+          <div v-if="!scheduleDays.length" class="empty">
+            여행 기간을 선택하면 날짜별 칸이 생성됩니다.
+          </div>
+          <div v-else class="day-board" role="list">
+            <div
+              v-for="(day, dayIndex) in scheduleDays"
+              :key="`day-${day.planDate}`"
+              class="day-column"
+            >
+              <div class="day-header">
+                <div class="day-title">
+                  <span class="day-sequence">Day {{ day.planDate }}</span>
+                  <strong v-if="day.dateLabel">{{ day.dateLabel }}</strong>
+                  <strong v-else>날짜 미지정</strong>
+                </div>
+                <span class="badge">{{ day.items.length }}곳</span>
+              </div>
+              <ul class="day-list" @dragover.prevent @drop="handleColumnDrop(dayIndex)">
+                <li
+                  v-for="(item, itemIndex) in day.items"
+                  :key="item.uid"
+                  class="drag-card"
+                  :class="{ active: selectedAttractionUid === item.uid }"
+                  :style="getItemStyle(dayIndex)"
+                  draggable="true"
+                  @click="focusOnAttraction(item)"
+                  @dragstart="handleDragStart(dayIndex, itemIndex, $event)"
+                  @dragend="handleDragEnd"
+                  @dragover.prevent
+                  @drop.stop="handleCardDrop(dayIndex, itemIndex)"
+                >
+                  <div class="drag-body">
+                    <div class="drag-top">
+                      <span class="order-badge">{{ itemIndex + 1 }}</span>
+                      <div class="name">{{ item.title }}</div>
+                    </div>
+                    <div class="muted">{{ item.addr1 }}</div>
+                  </div>
+                </li>
+                <li v-if="!day.items.length" class="placeholder">이 날짜에 방문지를 끌어다 놓으세요.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </ContentCard>
 </template>
 
 <script setup>
-import { reactive, ref, onMounted, computed, watch } from 'vue'
+import { reactive, ref, onMounted, computed, watch, onBeforeUnmount } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useAttractionStore } from '@/stores/attractions'
-import { requestCurrentMember } from '@/restapi/attraction'
+import { loadKakaoMaps, requestCurrentMember } from '@/restapi/attraction'
 import { requestCreatePlan } from '@/restapi/plan'
+import ContentCard from '@/components/common/ContentCard.vue'
 
 const router = useRouter()
 const attractionStore = useAttractionStore()
@@ -131,6 +152,11 @@ const form = reactive({
 
 const plannedAttractions = ref([])
 const scheduleDays = ref([])
+const mapContainer = ref(null)
+const mapInstance = ref(null)
+const mapOverlays = ref([])
+const selectedAttractionUid = ref(null)
+const hasInitialCenter = ref(false)
 const dragState = reactive({
   dayIndex: null,
   itemIndex: null
@@ -140,6 +166,111 @@ const isSubmitting = ref(false)
 const errorMessage = ref('')
 const totalAttractionCount = computed(() => plannedAttractions.value.length)
 const hasScheduleDays = computed(() => scheduleDays.value.length > 0)
+const mapItems = computed(() =>
+  scheduleDays.value.flatMap((day, dayIndex) =>
+    day.items.map((item, itemIndex) => ({
+      item,
+      uid: item.uid,
+      dayIndex,
+      itemIndex
+    }))
+  )
+)
+
+const PLAN_CARD_BASE_WIDTH = 1200
+const PLAN_CARD_PADDING_X = 64
+const PLAN_FORM_WIDTH = 500
+const PLAN_LIST_PADDING = 36
+const PLAN_DAY_COLUMN_WIDTH = 260
+const PLAN_DAY_COLUMN_GAP = 16
+const PLAN_LAYOUT_GAP = 16
+
+const planLayout = computed(() => {
+  const dayCount = scheduleDays.value.length
+  if (!dayCount) {
+    return {
+      isWide: false,
+      cardWidth: PLAN_CARD_BASE_WIDTH,
+      listWidth: 0
+    }
+  }
+
+  const listInnerWidth =
+    dayCount * PLAN_DAY_COLUMN_WIDTH + Math.max(0, dayCount - 1) * PLAN_DAY_COLUMN_GAP
+  const listOuterWidth = listInnerWidth + PLAN_LIST_PADDING
+  const requiredWidth = PLAN_FORM_WIDTH + PLAN_LAYOUT_GAP + listOuterWidth
+
+  return {
+    isWide: requiredWidth > PLAN_CARD_BASE_WIDTH,
+    cardWidth: Math.max(PLAN_CARD_BASE_WIDTH, requiredWidth),
+    listWidth: listOuterWidth
+  }
+})
+
+const planCardStyle = computed(() => {
+  if (!planLayout.value.isWide) {
+    return {}
+  }
+
+  return {
+    '--plan-card-width': `${planLayout.value.cardWidth + PLAN_CARD_PADDING_X}px`,
+    '--plan-list-width': `${planLayout.value.listWidth}px`,
+    '--plan-form-width': `${PLAN_FORM_WIDTH}px`
+  }
+})
+
+const DAY_COLOR_PALETTE = [
+  {
+    badgeBg: '#eef2ff',
+    badgeColor: '#4338ca',
+    badgeBorder: '#4338ca',
+    badgeShadow: 'rgba(67, 56, 202, 0.25)'
+  },
+  {
+    badgeBg: '#ecfeff',
+    badgeColor: '#0e7490',
+    badgeBorder: '#0e7490',
+    badgeShadow: 'rgba(14, 116, 144, 0.25)'
+  },
+  {
+    badgeBg: '#fef3c7',
+    badgeColor: '#b45309',
+    badgeBorder: '#b45309',
+    badgeShadow: 'rgba(180, 83, 9, 0.25)'
+  },
+  {
+    badgeBg: '#fee2e2',
+    badgeColor: '#b91c1c',
+    badgeBorder: '#b91c1c',
+    badgeShadow: 'rgba(185, 28, 28, 0.25)'
+  },
+  {
+    badgeBg: '#ecfccb',
+    badgeColor: '#3f6212',
+    badgeBorder: '#3f6212',
+    badgeShadow: 'rgba(63, 98, 18, 0.25)'
+  },
+  {
+    badgeBg: '#ede9fe',
+    badgeColor: '#6d28d9',
+    badgeBorder: '#6d28d9',
+    badgeShadow: 'rgba(109, 40, 217, 0.25)'
+  }
+]
+
+const getDayPalette = (dayIndex) => DAY_COLOR_PALETTE[dayIndex % DAY_COLOR_PALETTE.length]
+
+const getItemStyle = (dayIndex) => {
+  const palette = getDayPalette(dayIndex)
+  return {
+    '--badge-bg': palette.badgeBg,
+    '--badge-color': palette.badgeColor,
+    '--badge-border': palette.badgeBorder,
+    '--badge-shadow': palette.badgeShadow,
+    '--accent-color': palette.badgeBorder,
+    '--accent-shadow': palette.badgeShadow
+  }
+}
 
 const createAttractionEntries = (items) =>
   items.map((item, index) => ({
@@ -292,6 +423,99 @@ const handleDragEnd = () => {
   dragState.itemIndex = null
 }
 
+const toLatLng = (kakao, attraction) => {
+  const lat = Number(attraction.latitude)
+  const lng = Number(attraction.longitude)
+  if (Number.isNaN(lat) || Number.isNaN(lng)) return null
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null
+  return new kakao.maps.LatLng(lat, lng)
+}
+
+const cleanupOverlays = () => {
+  mapOverlays.value.forEach(({ overlay }) => overlay.setMap(null))
+  mapOverlays.value = []
+}
+
+const applyBadgeTheme = (el, dayIndex) => {
+  const palette = getDayPalette(dayIndex)
+  el.style.setProperty('--badge-bg', palette.badgeBg)
+  el.style.setProperty('--badge-color', palette.badgeColor)
+  el.style.setProperty('--badge-border', palette.badgeBorder)
+  el.style.setProperty('--badge-shadow', palette.badgeShadow)
+}
+
+const updateMarkerSelection = (uid) => {
+  mapOverlays.value.forEach(({ uid: markerUid, overlay, element }) => {
+    const isActive = markerUid === uid
+    element.classList.toggle('is-active', isActive)
+    overlay.setZIndex(isActive ? 3 : 1)
+  })
+}
+
+const focusOnAttraction = (attraction) => {
+  if (!attraction) return
+  selectedAttractionUid.value = attraction.uid
+  updateMarkerSelection(attraction.uid)
+}
+
+const createOverlayMarker = (kakao, entry) => {
+  const latLng = toLatLng(kakao, entry.item)
+  if (!latLng) return null
+  const el = document.createElement('div')
+  el.className = 'marker-badge order-badge'
+  el.textContent = String(entry.itemIndex + 1)
+  el.setAttribute('role', 'button')
+  el.setAttribute('aria-label', `${entry.item.title} ${entry.itemIndex + 1}번째 방문지`)
+  applyBadgeTheme(el, entry.dayIndex)
+  el.addEventListener('click', (event) => {
+    event.stopPropagation()
+    focusOnAttraction(entry.item)
+  })
+  if (selectedAttractionUid.value === entry.uid) {
+    el.classList.add('is-active')
+  }
+  const overlay = new kakao.maps.CustomOverlay({
+    position: latLng,
+    content: el,
+    clickable: true,
+    xAnchor: 0.5,
+    yAnchor: 0.5,
+    zIndex: selectedAttractionUid.value === entry.uid ? 3 : 1
+  })
+  overlay.setMap(mapInstance.value)
+  return { uid: entry.uid, overlay, element: el }
+}
+
+const renderMarkers = () => {
+  if (!mapInstance.value || !window.kakao?.maps) return
+  const kakao = window.kakao
+  cleanupOverlays()
+
+  mapOverlays.value = mapItems.value
+    .map((entry) => createOverlayMarker(kakao, entry))
+    .filter(Boolean)
+
+  if (!hasInitialCenter.value) {
+    const firstEntry = mapItems.value.find((entry) => toLatLng(kakao, entry.item))
+    if (firstEntry) {
+      mapInstance.value.setCenter(toLatLng(kakao, firstEntry.item))
+      hasInitialCenter.value = true
+    }
+  }
+}
+
+const initMap = async () => {
+  if (!mapContainer.value) return
+  const kakao = await loadKakaoMaps()
+  mapInstance.value = new kakao.maps.Map(mapContainer.value, {
+    center: new kakao.maps.LatLng(36.5, 127.8),
+    level: 10,
+    scrollwheel: true,
+    disableDoubleClickZoom: true
+  })
+  renderMarkers()
+}
+
 const fetchCurrentMember = async () => {
   try {
     const data = await requestCurrentMember()
@@ -378,15 +602,42 @@ onMounted(async () => {
   }
   plannedAttractions.value = createAttractionEntries(selectedAttractions.value)
   await fetchCurrentMember()
+  await initMap()
+})
+
+watch(
+  mapItems,
+  (items) => {
+    if (!items.length) {
+      cleanupOverlays()
+      selectedAttractionUid.value = null
+      hasInitialCenter.value = false
+      return
+    }
+    renderMarkers()
+    if (selectedAttractionUid.value && !items.some((entry) => entry.uid === selectedAttractionUid.value)) {
+      selectedAttractionUid.value = null
+      updateMarkerSelection(null)
+    }
+  },
+  { immediate: false }
+)
+
+onBeforeUnmount(() => {
+  cleanupOverlays()
+  mapInstance.value = null
 })
 </script>
 
 <style scoped>
-.plan-page {
-  min-height: 100vh;
-  background: #f7f9fb;
-  color: #1f2d3d;
-  padding: 20px;
+:deep(.content-card.plan-content-card--wide) {
+  width: var(--plan-card-width, 1200px);
+  margin: 0 auto;
+}
+
+.plan-page.is-wide .page-header {
+  max-width: none;
+  width: 100%;
 }
 
 .page-header {
@@ -430,6 +681,12 @@ onMounted(async () => {
 
 .layout.has-days {
   grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.15fr);
+}
+
+.layout.is-wide {
+  grid-template-columns: var(--plan-form-width, 500px) var(--plan-list-width, 1fr);
+  max-width: none;
+  width: 100%;
 }
 
 .form-card,
@@ -554,7 +811,7 @@ onMounted(async () => {
   grid-auto-flow: column;
   grid-auto-columns: minmax(260px, 1fr);
   gap: 16px;
-  overflow-x: auto;
+  overflow-x: visible;
   padding-bottom: 8px;
   flex: 1;
 }
@@ -625,28 +882,24 @@ onMounted(async () => {
 
 .drag-card {
   display: grid;
-  grid-template-columns: 50px 1fr;
+  grid-template-columns: 1fr;
   gap: 12px;
   padding: 12px;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   background: #fff;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
 }
 
 .drag-card:hover {
   border-color: #c7d2fe;
 }
 
-.drag-handle {
-  display: grid;
-  place-items: center;
-  background: #f3f4ff;
-  color: #4338ca;
-  border-radius: 10px;
-  font-weight: 800;
-  font-size: 18px;
-  cursor: grab;
+.drag-card.active {
+  border-color: var(--accent-color, #4f46e5);
+  box-shadow: 0 8px 20px var(--accent-shadow, rgba(79, 70, 229, 0.18));
 }
 
 .drag-body {
@@ -668,9 +921,11 @@ onMounted(async () => {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #eef2ff;
-  color: #4338ca;
+  background: var(--badge-bg, #eef2ff);
+  color: var(--badge-color, #4338ca);
+  border: 1px solid var(--badge-border, #4338ca);
   font-weight: 800;
+  box-shadow: 0 4px 10px var(--badge-shadow, rgba(67, 56, 202, 0.25));
 }
 
 .name {
@@ -692,9 +947,91 @@ onMounted(async () => {
   font-weight: 700;
 }
 
+.map-section {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.map-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.map-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.map-pane {
+  position: relative;
+  height: 280px;
+  border-radius: 14px;
+  background: #e2e8f0;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.map-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.map-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  padding: 12px;
+}
+
+:deep(.marker-badge.order-badge) {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--badge-bg, #eef2ff);
+  color: var(--badge-color, #4338ca);
+  border: 1px solid var(--badge-border, #4338ca);
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px var(--badge-shadow, rgba(67, 56, 202, 0.25));
+  cursor: pointer;
+  user-select: none;
+}
+
+:deep(.marker-badge.order-badge.is-active) {
+  box-shadow:
+    0 0 0 3px rgba(15, 23, 42, 0.25),
+    0 10px 20px var(--badge-shadow, rgba(67, 56, 202, 0.25));
+}
+
 @media (max-width: 1024px) {
+  :deep(.content-card.plan-content-card--wide) {
+    width: 100%;
+  }
+
   .layout {
     grid-template-columns: 1fr;
+  }
+
+  .layout.is-wide {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .day-board {
+    overflow-x: auto;
   }
 }
 </style>
