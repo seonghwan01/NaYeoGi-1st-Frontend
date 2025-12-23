@@ -5,7 +5,6 @@ import { useRouter } from 'vue-router';
 import '@toast-ui/editor/dist/toastui-editor-viewer.css';
 import Viewer from '@toast-ui/editor/dist/toastui-editor-viewer';
 
-// 라우터에서 props로 전달된 storyId를 받습니다.
 const props = defineProps({
   storyId: {
     type: String,
@@ -16,20 +15,130 @@ const props = defineProps({
 const store = useStorybookStore();
 const router = useRouter();
 const story = ref(null);
-const viewerContainer = ref(null); // 뷰어가 렌더링될 DOM 요소
+const viewerContainer = ref(null);
+
+const showModal = ref(false);
+const modalImage = ref('');
+
+const openModal = (src) => {
+  modalImage.value = src;
+  showModal.value = true;
+};
+const closeModal = () => {
+  showModal.value = false;
+  modalImage.value = '';
+};
+
+// 이미지 그룹화 로직
+const groupImagesToCarousel = () => {
+  if (!viewerContainer.value) return;
+
+  const paragraphs = viewerContainer.value.querySelectorAll('p');
+  
+  paragraphs.forEach(p => {
+    const images = p.querySelectorAll('img');
+    
+    // 1. 모든 이미지에 클릭 확대 이벤트 바인딩
+    images.forEach(img => {
+      img.style.cursor = 'zoom-in';
+      img.addEventListener('click', () => {
+        if (!img.dataset.isDragging) openModal(img.src);
+      });
+    });
+
+    if (images.length >= 3) { 
+      // --- [3개 이상: 캐러셀 모드] ---
+      const wrapper = document.createElement('div');
+      wrapper.className = 'carousel-wrapper';
+
+      const prevBtn = document.createElement('button');
+      prevBtn.className = 'carousel-nav-btn prev';
+      prevBtn.innerHTML = '<i class="bi bi-chevron-left"></i>';
+      
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'carousel-nav-btn next';
+      nextBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
+
+      const scrollContainer = document.createElement('div');
+      scrollContainer.className = 'image-scroll-container';
+      
+      let isDown = false;
+      let startX;
+      let scrollLeft;
+
+      scrollContainer.addEventListener('mousedown', (e) => {
+        isDown = true;
+        scrollContainer.classList.add('active');
+        startX = e.pageX - scrollContainer.offsetLeft;
+        scrollLeft = scrollContainer.scrollLeft;
+      });
+      scrollContainer.addEventListener('mouseleave', () => {
+        isDown = false;
+        scrollContainer.classList.remove('active');
+      });
+      scrollContainer.addEventListener('mouseup', () => {
+        isDown = false;
+        scrollContainer.classList.remove('active');
+        setTimeout(() => images.forEach(img => delete img.dataset.isDragging), 50);
+      });
+      scrollContainer.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - scrollContainer.offsetLeft;
+        const walk = (x - startX) * 2;
+        if (Math.abs(walk) > 5) images.forEach(img => img.dataset.isDragging = "true");
+        scrollContainer.scrollLeft = scrollLeft - walk;
+      });
+
+      prevBtn.addEventListener('click', () => scrollContainer.scrollBy({ left: -400, behavior: 'smooth' }));
+      nextBtn.addEventListener('click', () => scrollContainer.scrollBy({ left: 400, behavior: 'smooth' }));
+
+      images.forEach(img => {
+        const imgWrapper = document.createElement('div');
+        imgWrapper.className = 'image-wrapper';
+        img.classList.add('carousel-image');
+        imgWrapper.appendChild(img.cloneNode(true));
+        imgWrapper.querySelector('img').addEventListener('click', (e) => {
+            if (e.target.dataset.isDragging !== "true") openModal(e.target.src);
+        });
+        scrollContainer.appendChild(imgWrapper);
+      });
+      
+      wrapper.appendChild(prevBtn);
+      wrapper.appendChild(scrollContainer);
+      wrapper.appendChild(nextBtn);
+      p.style.display = 'none';
+      p.parentNode.insertBefore(wrapper, p.nextSibling);
+
+    } else if (images.length === 2) {
+      // --- [2개: 가로 나열 (화살표/드래그 없음)] ---
+      const galleryContainer = document.createElement('div');
+      galleryContainer.className = 'simple-gallery dual';
+      
+      images.forEach(img => {
+        const clonedImg = img.cloneNode(true);
+        clonedImg.className = 'gallery-image';
+        clonedImg.addEventListener('click', () => openModal(clonedImg.src));
+        galleryContainer.appendChild(clonedImg);
+      });
+
+      p.style.display = 'none';
+      p.parentNode.insertBefore(galleryContainer, p.nextSibling);
+
+    } else if (images.length === 1) {
+      // --- [1개: 중앙 정렬] ---
+      images[0].classList.add('single-image');
+    }
+  });
+};
 
 onMounted(async () => {
   story.value = await store.fetchStory(props.storyId);
-  
-  // 데이터 로드 후 DOM이 업데이트될 때까지 대기
   if (story.value && story.value.content) {
     await nextTick();
     if (viewerContainer.value) {
-      // Vanilla JS Viewer 인스턴스 생성
-      new Viewer({
-        el: viewerContainer.value,
-        initialValue: story.value.content
-      });
+      new Viewer({ el: viewerContainer.value, initialValue: story.value.content });
+      setTimeout(groupImagesToCarousel, 100);
     }
   }
 });
@@ -55,104 +164,110 @@ const onTogglePublic = async () => {
 </script>
 
 <template>
-  <div class="bg-gradient rounded-4 min-vh-100 py-5">
-    <div class="container" style="max-width: 900px;">
-      <div v-if="store.isLoading" class="library-card p-4 p-md-5 rounded-4 shadow-sm text-center py-5">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-3 text-white">스토리를 불러오는 중...</p>
-      </div>
+  <div class="page-wrapper bg-joyful-gradient min-vh-100 py-5">
+    
+    <div v-if="store.isLoading" class="loading-overlay">
+       <div class="spinner-border text-white" style="width: 3rem; height: 3rem;" role="status"></div>
+       <p class="mt-4 text-white fs-4 fw-light">불러오는 중...</p>
+    </div>
 
-      <article v-else-if="story" class="bg-white p-4 p-md-5 rounded-4 shadow-lg">
-        <!-- 헤더: 제목, 작성자, 날짜, 버튼 -->
-        <header class="border-bottom pb-4 mb-4">
-          <h1 class="display-5 fw-bold mb-3 text-center">{{ story.title }}</h1>
-          <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-2 mb-3">
-            <p class="text-muted small mb-0">
-              작성자: <span class="fw-bold">{{ story.writerName }}</span> | 작성일: {{ story.createdDate }}
-            </p>
-            <span v-if="story.isPublic" class="badge bg-success-subtle text-success ms-md-2">공개</span>
-            <span v-else class="badge bg-danger-subtle text-danger ms-md-2">비공개</span>
-            <span class="text-muted small ms-md-2">조회수: {{ story.hit }}</span>
+    <div v-if="story" class="container" style="max-width: 900px;">
+      
+      <article class="glass-panel p-4 p-md-5 mb-5 fade-in-up">
+        <header class="border-bottom pb-4 mb-4 text-center">
+          <div class="d-flex justify-content-center align-items-center gap-2 mb-3">
+             <span v-if="story.isPublic" class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2">공개</span>
+             <span v-else class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-2">비공개</span>
+             <span class="text-muted small ms-2"><i class="bi bi-eye me-1"></i>{{ story.hit }}</span>
           </div>
-
-          <div class="d-flex justify-content-center gap-2 mt-3">
-              <button class="btn btn-outline-secondary btn-sm" @click="onEdit">수정</button>
-              <button
-                class="btn btn-sm"
-                :class="story.isPublic ? 'btn-outline-warning' : 'btn-outline-success'"
-                @click="onTogglePublic"
-              >
-                {{ story.isPublic ? '비공개로 전환' : '공개하기' }}
-              </button>
-              <button class="btn btn-outline-danger btn-sm" @click="onDelete">삭제</button>
-          </div>
+          <h1 class="display-5 fw-bold mb-3 text-dark">{{ story.title }}</h1>
+          <p class="text-muted">
+            <span class="fw-bold text-dark">{{ story.writerName }}</span> · {{ story.createdDate }}
+          </p>
         </header>
 
-        <!-- 썸네일 (옵션) 
-        <div v-if="story.thumbnailPath" class="text-center my-4">
-          <img :src="story.thumbnailPath" class="img-fluid rounded-3 shadow-sm" alt="Story Thumbnail" style="max-height: 400px; object-fit: cover;">
-        </div> 
-        -->
-        
-
-        <!-- 본문: Vanilla JS Viewer Target Div -->
-        <div class="story-content fs-5 mt-5">
+        <div class="story-content mt-4">
              <div ref="viewerContainer"></div>
         </div>
-
       </article>
+      
+      <div style="height: 100px;"></div>
 
-      <div v-else class="library-card p-4 p-md-5 rounded-4 shadow-sm text-center py-5">
-        <h2 class="text-white">스토리를 찾을 수 없습니다.</h2>
-        <p class="text-white">요청하신 스토리가 존재하지 않거나, 불러오는 데 실패했습니다.</p>
-        <button class="btn btn-primary mt-3" @click="$router.push('/my-stories')">
-          내 스토리 목록으로
+      <div class="floating-action-bar shadow-lg">
+        <button class="btn btn-action-secondary rounded-pill px-4 me-2" @click="router.push('/my-stories')">
+           <i class="bi bi-arrow-left me-1"></i> 목록
+        </button>
+        <div class="vr mx-2 bg-secondary opacity-25"></div>
+        
+        <button class="btn btn-icon rounded-circle me-1" @click="onEdit" data-tooltip="수정하기">
+           <i class="bi bi-pencil-fill text-primary"></i>
+        </button>
+        <button class="btn btn-icon rounded-circle me-1" @click="onTogglePublic" :data-tooltip="story.isPublic ? '비공개로 전환' : '공개하기'">
+           <i class="bi" :class="story.isPublic ? 'bi-lock-fill text-warning' : 'bi-globe text-success'"></i>
+        </button>
+        <button class="btn btn-icon rounded-circle" @click="onDelete" data-tooltip="삭제하기">
+           <i class="bi bi-trash-fill text-danger"></i>
         </button>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div v-if="showModal" class="image-modal-overlay" @click="closeModal">
+        <button class="modal-close-btn" @click="closeModal"><i class="bi bi-x-lg"></i></button>
+        <img :src="modalImage" class="modal-content-img" @click.stop />
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <style>
-/* 유리창 효과 스타일 (library-card) */
-.library-card {
-  background-color: rgba(255, 255, 255, 0.15); /* 반투명 배경 */
-  backdrop-filter: blur(10px); /* 배경 블러 효과 */
-  border: 1px solid rgba(255, 255, 255, 0.2); /* 테두리 */
-  color: white; /* 텍스트 색상 */
+/* --- Design System --- */
+@keyframes gradient-move { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+.glass-panel { background: rgb(255, 255, 255); backdrop-filter: blur(20px); border-radius: 2rem; border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1); }
+.fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+/* --- Carousel & Gallery --- */
+.carousel-wrapper { position: relative; margin: 2.5rem 0; display: flex; align-items: center; }
+.carousel-wrapper:hover .carousel-nav-btn { opacity: 1; }
+.carousel-nav-btn {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(0,0,0,0.1);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 10; opacity: 0; transition: all 0.3s ease;
 }
-/* story-content 내부의 스타일링 */
-.story-content h1, .story-content h2, .story-content h3, .story-content h4, .story-content h5, .story-content h6 {
-  font-weight: bold;
-  margin-top: 2.5rem;
-  margin-bottom: 1rem;
-  color: #222;
-  line-height: 1.4;
-}
-.story-content p {
-  line-height: 1.8;
-  margin-bottom: 1.5rem;
-  color: #444;
-}
-.story-content img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 0.75rem; /* 더 둥근 모서리 */
-  margin-top: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1); /* 이미지에 그림자 추가 */
-}
-.story-content blockquote {
-  border-left: 0.25rem solid #ced4da;
-  padding-left: 1rem;
-  margin-left: 0;
-  font-style: italic;
-  color: #6c757d;
-}
-.story-content pre {
-  background-color: #f8f9fa;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  overflow-x: auto;
-}
+.carousel-nav-btn.prev { left: -20px; } .carousel-nav-btn.next { right: -20px; }
+
+.image-scroll-container { display: flex; overflow-x: auto; gap: 1rem; padding: 1rem 0; width: 100%; cursor: grab; scroll-behavior: smooth; scrollbar-width: none; }
+.image-scroll-container::-webkit-scrollbar { display: none; }
+.image-scroll-container.active { cursor: grabbing; scroll-behavior: auto; }
+.image-wrapper { flex: 0 0 auto; width: 300px; user-select: none; }
+.carousel-image { width: 100%; height: 250px; object-fit: cover; border-radius: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.08); transition: transform 0.3s; }
+
+/* 2개일 때: 화살표 없이 가로 나열 */
+.simple-gallery.dual { display: flex; justify-content: center; gap: 1.5rem; margin: 2.5rem 0; }
+.gallery-image { width: 48%; max-height: 400px; object-fit: cover; border-radius: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.1); cursor: zoom-in; }
+
+.single-image { width: 100%; max-height: 500px; object-fit: cover; border-radius: 1rem; margin: 2rem 0; box-shadow: 0 4px 20px rgba(0,0,0,0.1); cursor: zoom-in; }
+
+/* --- Floating Bar & Tooltip --- */
+.floating-action-bar { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.527); backdrop-filter: blur(10px); padding: 0.75rem 1rem; border-radius: 50rem; border: 1px solid rgba(255, 255, 255, 0.5); display: flex; align-items: center; z-index: 1000; box-shadow: 0 8px 32px rgba(0,0,0,0.1); transition: all 0.3s ease; }
+.btn-icon { position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fac4; border: 1px solid #e9ecef; transition: all 0.2s; }
+.btn-icon:hover { background-color: #e9ecef9f; transform: translateY(-2px); }
+
+[data-tooltip]::after { content: attr(data-tooltip); position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%) translateY(10px); background: rgba(33, 37, 41, 0.9); color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.7rem; white-space: nowrap; opacity: 0; visibility: hidden; transition: all 0.2s ease; }
+[data-tooltip]:hover::after { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+
+/* --- Modal --- */
+.image-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.9); display: flex; justify-content: center; align-items: center; z-index: 99999; }
+.modal-content-img { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
+.modal-close-btn { position: absolute; top: 30px; right: 40px; background: none; border: none; color: white; font-size: 2.5rem; cursor: pointer; }
+
+/* --- Typography --- */
+.story-content h1, .story-content h2 { font-weight: 800; color: #2c3e50; margin-top: 3rem; margin-bottom: 1.5rem; padding-bottom: 0.5rem; border-bottom: 2px solid #f1f3f5; }
+.story-content h3 { font-weight: 700; color: #343a40; margin-top: 2rem; display: flex; align-items: center; }
+.story-content h3::before { content: ''; display: inline-block; width: 6px; height: 24px; background-color: #23a6d5; margin-right: 10px; border-radius: 3px; }
+.story-content p { font-size: 1.1rem; line-height: 1.8; color: #495057; word-break: keep-all; }
+.loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); backdrop-filter: blur(5px); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
 </style>
