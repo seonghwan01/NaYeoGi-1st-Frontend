@@ -44,10 +44,9 @@
                 <div v-else class="thumb-fallback">No Image</div>
               </div>
               <div class="card-body">
-                <div class="card-title">{{ attraction.title }}</div>
+                <div class="card-title">{{ attraction.title }} <span class="badge">예상 선호도 {{ Math.floor(attraction.cal_score*100) ?? 'N/A' }}</span></div>
                 <div class="card-addr">{{ attraction.addr1 }}</div>
                 <div class="meta-row">
-                  <span class="badge">점수 {{ attraction.cal_score?.toFixed(3) ?? 'N/A' }}</span>
                   <span v-if="attraction.tel" class="muted">{{ attraction.tel }}</span>
                 </div>
                 <div class="card-actions">
@@ -58,6 +57,13 @@
                     @click.stop="toggleSelection(attraction)"
                   >
                     {{ isSelected(attraction.id) ? '선택됨' : '선택하기' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="ghost-btn sm"
+                    @click.stop="openNaverMap(attraction.title)"
+                  >
+                    자세히 보기
                   </button>
                 </div>
               </div>
@@ -249,6 +255,12 @@ const switchTab = async (key) => {
   } catch (error) {
     console.error(error)
   }
+}
+
+const openNaverMap = (title) => {
+  if (!title) return
+  const url = `https://map.naver.com/p/search/${encodeURIComponent(title)}`
+  window.open(url, '_blank', 'noopener')
 }
 
 const initMap = async () => {
@@ -655,7 +667,7 @@ const goPlan = () => {
 
 .thumb {
   width: 100%;
-  height: 100px;
+  height: 130px;
   border-radius: 10px;
   overflow: hidden;
   background: #eef2f7;
@@ -713,7 +725,8 @@ const goPlan = () => {
 
 .card-actions {
   display: flex;
-  margin-top: 4px;
+  margin-top: 1px;
+  gap: 5px;
 }
 
 .list-actions {
