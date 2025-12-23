@@ -1,5 +1,5 @@
 <template>
-  <ContentCard
+  <div
     :class="['plan-content-card', { 'plan-content-card--wide': planLayout.isWide }]"
     :style="planCardStyle"
   >
@@ -127,7 +127,7 @@
         </section>
       </main>
     </div>
-  </ContentCard>
+  </div>
 </template>
 
 <script setup>
@@ -137,7 +137,6 @@ import { useRouter } from 'vue-router'
 import { useAttractionStore } from '@/stores/attractions'
 import { loadKakaoMaps, requestCurrentMember } from '@/restapi/attraction'
 import { requestCreatePlan } from '@/restapi/plan'
-import ContentCard from '@/components/common/ContentCard.vue'
 
 const router = useRouter()
 const attractionStore = useAttractionStore()
@@ -630,8 +629,23 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-:deep(.content-card.plan-content-card--wide) {
+.plan-content-card {
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 2rem;
+  color: #333;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.plan-content-card.plan-content-card--wide {
   width: var(--plan-card-width, 1200px);
+  max-width: none;
   margin: 0 auto;
 }
 
@@ -1017,7 +1031,7 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 1024px) {
-  :deep(.content-card.plan-content-card--wide) {
+  .plan-content-card.plan-content-card--wide {
     width: 100%;
   }
 

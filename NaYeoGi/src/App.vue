@@ -14,7 +14,9 @@ onMounted(() => {
 
 // 현재 경로가 랜딩 페이지인지 확인
 const isLandingPage = computed(() => route.name === 'landing' || route.name === 'login')
-const isAttractionSelect = computed(() => route.name === 'attraction-select')
+const isWideLayout = computed(() =>
+  ['attraction-select', 'attraction-plan'].includes(route.name)
+)
 
 // 배경 슬라이드 이미지 목록 (테마: 사계절 - 봄, 여름, 가을, 겨울)
 const bgImages = ref([
@@ -59,7 +61,7 @@ const bgImages = ref([
     <TheHeader :is-landing="isLandingPage" />
 
     <!-- 2. 라우터 뷰: URL에 따라 TheLandingView.vue 또는 TheMainView.vue로 바뀝니다. -->
-    <main :class="['container mt-5 pt-4', { 'container--wide': isAttractionSelect }]">
+    <main :class="['container mt-5 pt-4', { 'container--wide': isWideLayout }]">
       <RouterView />
     </main>
   </div>
