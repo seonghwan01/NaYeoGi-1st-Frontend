@@ -1,7 +1,9 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { useStorybookStore } from '@/stores/storybook';
 import { useRouter } from 'vue-router';
+import '@toast-ui/editor/dist/toastui-editor-viewer.css';
+import Viewer from '@toast-ui/editor/dist/toastui-editor-viewer';
 
 // 라우터에서 props로 전달된 storyId를 받습니다.
 const props = defineProps({
@@ -13,10 +15,23 @@ const props = defineProps({
 
 const store = useStorybookStore();
 const router = useRouter();
-const story = ref(null); // 최종 스토리 데이터를 담을 변수
+const story = ref(null);
+const viewerContainer = ref(null); // 뷰어가 렌더링될 DOM 요소
 
 onMounted(async () => {
   story.value = await store.fetchStory(props.storyId);
+  
+  // 데이터 로드 후 DOM이 업데이트될 때까지 대기
+  if (story.value && story.value.content) {
+    await nextTick();
+    if (viewerContainer.value) {
+      // Vanilla JS Viewer 인스턴스 생성
+      new Viewer({
+        el: viewerContainer.value,
+        initialValue: story.value.content
+      });
+    }
+  }
 });
 
 const onEdit = () => {
@@ -73,13 +88,17 @@ const onTogglePublic = async () => {
           </div>
         </header>
 
-        <!-- 썸네일 (옵션) -->
+        <!-- 썸네일 (옵션) 
         <div v-if="story.thumbnailPath" class="text-center my-4">
           <img :src="story.thumbnailPath" class="img-fluid rounded-3 shadow-sm" alt="Story Thumbnail" style="max-height: 400px; object-fit: cover;">
-        </div>
+        </div> 
+        -->
+        
 
-        <!-- 본문: v-html을 사용하여 HTML 렌더링 -->
-        <div class="story-content fs-5 mt-5" v-html="story.content"></div>
+        <!-- 본문: Vanilla JS Viewer Target Div -->
+        <div class="story-content fs-5 mt-5">
+             <div ref="viewerContainer"></div>
+        </div>
 
       </article>
 
