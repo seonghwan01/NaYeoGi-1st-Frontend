@@ -27,6 +27,7 @@ const {
 
 const selectedId = ref(null)
 const visibleAttractions = ref([])
+const cardListRef = ref(null)
 
 const mapContainer = ref(null)
 const mapInstance = ref(null)
@@ -169,10 +170,14 @@ const focusOnAttraction = (attraction) => {
 }
 
 const scrollToCard = (id) => {
+  const container = cardListRef.value
   const el = document.getElementById(getCardId(id))
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }
+  if (!container || !el) return
+  const containerRect = container.getBoundingClientRect()
+  const targetRect = el.getBoundingClientRect()
+  const offset = targetRect.top - containerRect.top
+  const nextScrollTop = container.scrollTop + offset - container.clientHeight / 2 + targetRect.height / 2
+  container.scrollTo({ top: Math.max(nextScrollTop, 0), behavior: 'smooth' })
 }
 
 const updateVisibleList = () => {
@@ -285,7 +290,7 @@ onBeforeUnmount(() => {
           <div v-else-if="!visibleAttractions.length" class="state">
             {{ attractions.length ? '표시할 여행지가 없습니다.' : '카테고리에 해당하는 여행지가 없습니다.' }}
           </div>
-          <div v-else class="card-list">
+          <div v-else ref="cardListRef" class="card-list">
             <article
               v-for="item in visibleAttractions"
               :key="item.id"

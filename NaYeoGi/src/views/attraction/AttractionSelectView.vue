@@ -30,7 +30,7 @@
             </button>
           </div>
 
-          <div class="card-list">
+          <div ref="cardListRef" class="card-list">
             <article
               v-for="attraction in displayedAttractions"
               :key="attraction.id"
@@ -153,6 +153,7 @@ const mapInstance = ref(null)
 const markers = ref([])
 const markerImages = ref({ default: null, selected: null })
 const cardRefs = ref({})
+const cardListRef = ref(null)
 
 const setCardRef = (el, id) => {
   if (!id) return
@@ -287,16 +288,24 @@ watch(
   { immediate: false }
 )
 
+const scrollToCard = (id) => {
+  const container = cardListRef.value
+  const target = cardRefs.value[id]
+  if (!container || !target) return
+  const containerRect = container.getBoundingClientRect()
+  const targetRect = target.getBoundingClientRect()
+  const offset = targetRect.top - containerRect.top
+  const nextScrollTop = container.scrollTop + offset - container.clientHeight / 2 + targetRect.height / 2
+  container.scrollTo({ top: Math.max(nextScrollTop, 0), behavior: 'smooth' })
+}
+
 watch(
   selectedId,
   async (id) => {
     updateMarkerSelection(id)
     if (!id) return
     await nextTick()
-    const target = cardRefs.value[id]
-    if (target?.scrollIntoView) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }
+    scrollToCard(id)
   },
   { flush: 'post' }
 )
