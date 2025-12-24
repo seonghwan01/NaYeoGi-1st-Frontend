@@ -296,25 +296,30 @@ const deletePlan = async (plan) => {
               </div>
               <div class="mt-3 d-flex align-items-center gap-2">
                 <button
-                  class="btn btn-outline-light btn-sm"
+                  class="btn btn-icon rounded-circle"
                   :disabled="isSavingPlan && editingPlanId === plan.id"
                   @click="startEditPlan(plan)"
+                  title="수정"
                 >
-                  수정
+                  <i class="bi bi-pencil-fill text-primary"></i>
                 </button>
                 <button
-                  class="btn btn-outline-danger btn-sm"
+                  class="btn btn-icon rounded-circle"
                   :disabled="deletingPlanId === plan.id"
                   @click="deletePlan(plan)"
+                  title="삭제"
                 >
-                  삭제
+                  <i class="bi bi-trash-fill text-danger"></i>
                 </button>
-                <button
-                  class="btn btn-primary btn-sm"
-                  @click="goToStoryCreate(plan.id)"
-                >
-                  스토리 생성 ✨
-                </button>
+                
+                <div class="ms-auto">
+                  <button
+                    class="btn btn-sm px-4 rounded-pill ai-btn"
+                    @click="goToStoryCreate(plan.id)"
+                  >
+                    스토리 생성 ✨
+                  </button>
+                </div>
               </div>
               <div
                 v-if="editingPlanId === plan.id && editingPlanDraft"
@@ -387,6 +392,44 @@ const deletePlan = async (plan) => {
 }
 .form-control:disabled {
   background-color: rgba(255, 255, 255, 0.5);
+}
+
+/* 원형 아이콘 버튼 스타일 */
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: none;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.btn-icon:hover:not(:disabled) {
+  background-color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ai-btn {
+  background-color: #e5e5f3;
+  color: rgb(78, 75, 75);
+  border: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.ai-btn:hover {
+  background-color: #e9e9f7;
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
 }
 
 /* 애니메이션 */

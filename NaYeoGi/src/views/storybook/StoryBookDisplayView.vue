@@ -232,7 +232,8 @@ const onTogglePublic = async () => {
 <style>
 /* --- Design System --- */
 @keyframes gradient-move { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-.glass-panel { background: rgb(255, 255, 255); backdrop-filter: blur(20px); border-radius: 2rem; border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1); }
+/* 최적화: backdrop-filter 제거 (성능 저하 원인) -> 투명도 있는 흰색 배경 사용 */
+.glass-panel { background: rgba(255, 255, 255, 0.95); border-radius: 2rem; border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1); }
 .fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -244,7 +245,8 @@ const onTogglePublic = async () => {
   width: 40px; height: 40px; border-radius: 50%;
   background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(0,0,0,0.1);
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; z-index: 10; opacity: 0; transition: all 0.3s ease;
+  /* 최적화: transition 속성 명시 */
+  cursor: pointer; z-index: 10; opacity: 0; transition: opacity 0.3s ease, background-color 0.2s;
 }
 .carousel-nav-btn.prev { left: -20px; } .carousel-nav-btn.next { right: -20px; }
 
@@ -266,7 +268,7 @@ const onTogglePublic = async () => {
 
 /* --- Floating Bar & Tooltip --- */
 .floating-action-bar { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.527); backdrop-filter: blur(10px); padding: 0.75rem 1rem; border-radius: 50rem; border: 1px solid rgba(255, 255, 255, 0.5); display: flex; align-items: center; z-index: 1000; box-shadow: 0 8px 32px rgba(0,0,0,0.1); transition: all 0.3s ease; }
-.btn-icon { position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fac4; border: 1px solid #e9ecef; transition: all 0.2s; }
+.btn-icon { position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fac4; border: 1px solid #e9ecef; /* 최적화: transition 속성 명시 */ transition: transform 0.2s, background-color 0.2s; }
 .btn-icon:hover { background-color: #e9ecef9f; transform: translateY(-2px); }
 
 [data-tooltip]::after { content: attr(data-tooltip); position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%) translateY(10px); background: rgba(33, 37, 41, 0.9); color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.7rem; white-space: nowrap; opacity: 0; visibility: hidden; transition: all 0.2s ease; }

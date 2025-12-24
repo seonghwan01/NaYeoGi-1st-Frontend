@@ -100,11 +100,11 @@
         </div>
       </div>
 <div>
-        <label class="form-label text-muted small fw-bold mb-2">📝 간단 메모</label>
+        <label class="form-label text-muted small fw-bold mb-2">📝 메모</label>
         <textarea
           class="form-control bg-light border-0"
           rows="3"
-          placeholder="이 장소에서의 추억을 간단히 남겨주세요."
+          placeholder="이 장소에서의 추억을 남겨주세요.(자세히 작성할수록 원하는 글이 작성됩니다!)"
           :value="sectionData.content"
           @input="$emit('update-content', $event.target.value)"
         ></textarea>
