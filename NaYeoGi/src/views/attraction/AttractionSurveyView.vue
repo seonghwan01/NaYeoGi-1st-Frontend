@@ -9,7 +9,10 @@
         <section class="survey-card">
           <div class="icon">📍</div>
           <h1 class="title">어디로 여행가시나요?</h1>
-          <p class="subtitle">원하는 지역 하나를 선택해주세요</p>
+          <p class="subtitle">
+            원하는 지역 하나를 선택해주세요
+            <span v-if="showRegionError" class="error-text">* 지역을 선택해주세요!</span>
+          </p>
           <div class="chips">
             <button
               v-for="region in regions"
@@ -28,7 +31,10 @@
         <section class="survey-card">
           <div class="icon">✨</div>
           <h2 class="title">내가 원하는 여행은?</h2>
-          <p class="subtitle">원하는 여행 테마들을 선택해주세요</p>
+          <p class="subtitle">
+            원하는 여행 테마들을 선택해주세요
+            <span v-if="showTopicError" class="error-text">* 여행 테마를 선택해주세요!</span>
+          </p>
           <div class="chips topic-chips">
             <div v-if="topicError" class="chip chip-error">{{ topicError }}</div>
             <template v-else>
@@ -58,7 +64,7 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useAttractionStore } from '@/stores/attractions'
@@ -70,11 +76,26 @@ const { regions, topics, topicError, selectedRegion, selectedTopics, isRecommend
   storeToRefs(attractionStore)
 const { loadTopics, selectRegion, toggleTopic, fetchRecommendationsForTab } = attractionStore
 
+const showRegionError = ref(false)
+const showTopicError = ref(false)
+
 const handleSubmit = async () => {
   if (isRecommending.value) return
-  if (!selectedRegion.value || selectedTopics.value.length === 0) {
-    return
+
+  let hasError = false
+
+  if (!selectedRegion.value) {
+    showRegionError.value = true
+    hasError = true
   }
+
+  if (selectedTopics.value.length === 0) {
+    showTopicError.value = true
+    hasError = true
+  }
+
+  if (hasError) return
+
   try {
     await fetchRecommendationsForTab({ resetSelections: true })
     router.push({ name: 'attraction-select' })
@@ -83,6 +104,18 @@ const handleSubmit = async () => {
     console.log(error)
   }
 }
+
+watch(selectedRegion, (newVal) => {
+  if (newVal) showRegionError.value = false
+})
+
+watch(
+  selectedTopics,
+  (newVal) => {
+    if (newVal.length > 0) showTopicError.value = false
+  },
+  { deep: true }
+)
 
 onMounted(() => {loadTopics() })
 </script>
@@ -245,6 +278,13 @@ onMounted(() => {loadTopics() })
   color: #b91c1c;
   font-size: 14px;
   text-align: center;
+}
+
+.error-text {
+  color: #ef4444;
+  font-size: 14px;
+  margin-left: 8px;
+  font-weight: 600;
 }
 
 @media (max-width: 1024px) {
