@@ -4,6 +4,11 @@ import { useRouter } from 'vue-router';
 // API 통신을 담당할 파일을 임포트합니다.
 import { uploadImagesApi, deleteImageApi } from "@/restapi/image";
 import { generateAiStoryApi, saveStoryApi, getStoryById, getMyStories, deleteStoryApi, updateStoryVisibilityApi, updateStoryApi } from "@/restapi/storybook";
+import {
+  COMPANIONS,
+  STORY_TONES,
+  WEATHER_TAGS,
+} from '@/constants/storybook/storyConstants';
 
  export const useStorybookStore = defineStore('storybook', () => {
   const router = useRouter();
@@ -157,16 +162,59 @@ import { generateAiStoryApi, saveStoryApi, getStoryById, getMyStories, deleteSto
     currentStory.storyDays = allDays;
   }
 
+  // --- Helper: ID -> Clean Label (Text only) ---
+  function getCleanLabel(list, id) {
+    const item = list.find(i => i.id === id);
+    if (!item) return id; 
+    // label is already clean text in storyConstants.js now
+    return item.label;
+  }
+
+  function calculateDuration(startDate, endDate) {
+    if (!startDate || !endDate) return "";
+    const s = new Date(startDate);
+    const e = new Date(endDate);
+    const diffTime = Math.abs(e - s);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    return `${diffDays}박 ${diffDays + 1}일`;
+  }
+
+  function calculateSeason(startDate) {
+      if (!startDate) return "";
+      const month = new Date(startDate).getMonth() + 1;
+      if (month >= 3 && month <= 5) return '봄';
+      if (month >= 6 && month <= 8) return '여름';
+      if (month >= 9 && month <= 11) return '가을';
+      return '겨울';
+  }
+
   async function generateStoryDraft() {
     isLoading.value = true;
     storyDraft.value = null;
     try {
       const payload = JSON.parse(JSON.stringify(currentStory));
+      
+      // 1. Transform IDs to Clean Labels (for AI)
+      payload.companions = payload.companions.map(id => getCleanLabel(COMPANIONS, id));
+      payload.tones = payload.tones.map(id => getCleanLabel(STORY_TONES, id));
+
+      // 2. Add calculated fields
+      payload.duration = calculateDuration(currentStory.startDate, currentStory.endDate);
+      payload.season = calculateSeason(currentStory.startDate);
+
       payload.storyDays.forEach(day => {
+        // Transform weather IDs to labels
+        if (Array.isArray(day.weather)) {
+           day.weather = day.weather.map(id => getCleanLabel(WEATHER_TAGS, id));
+        }
+
         day.sections.forEach(section => {
           delete section.id;
           if (section.atmosphere === "") delete section.atmosphere;
+          // Note: section.weather is likely unused, but we keep the logic just in case
           if (section.weather === "") delete section.weather;
+          
+          // MOOD_TAGS are stored as strings (labels) in selectedTags, so they are already clean text.
         });
       });
 

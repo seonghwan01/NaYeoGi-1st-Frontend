@@ -82,27 +82,21 @@
           <label class="form-label text-muted small fw-bold mb-0">
             😊 이 장소의 분위기 <span class="text-primary" style="font-size: 0.8em;">(최대 10개)</span>
           </label>
-
-          <button
-            v-if="allMoodTags.length > limitCount"
-            class="btn btn-sm btn-link text-decoration-none text-muted p-0"
-            style="font-size: 0.85rem;"
-            @click="isExpanded = !isExpanded"
-          >
-            {{ isExpanded ? '접기 ▲' : '+ 더보기' }}
-          </button>
         </div>
 
-        <div class="d-flex flex-wrap gap-2">
-          <button
-            v-for="tag in displayedTags"
-            :key="tag"
-            class="btn btn-sm rounded-pill transition-btn"
-            :class="sectionData.selectedTags.includes(tag) ? 'btn-primary text-white' : 'btn-outline-secondary border-0 bg-light text-dark'"
-            @click="$emit('toggle-tag', tag)"
-          >
-            {{ tag }}
-          </button>
+        <div v-for="category in MOOD_TAGS_CATEGORIES" :key="category.label" class="mb-3">
+          <h6 class="fw-bold small text-muted mb-2 ps-1">{{ category.label }}</h6>
+          <div class="d-flex flex-wrap gap-2">
+            <button
+              v-for="tag in category.items"
+              :key="tag.label"
+              class="btn btn-sm rounded-pill transition-btn"
+              :class="sectionData.selectedTags.includes(tag.label) ? 'btn-primary text-white' : 'btn-outline-secondary border-0 bg-light text-dark'"
+              @click="$emit('toggle-tag', tag.label)"
+            >
+              {{ tag.icon }} {{ tag.label }}
+            </button>
+          </div>
         </div>
       </div>
 <div>
@@ -120,8 +114,8 @@
 </template>
 
 <script setup>
-import { MOOD_TAGS } from '@/constants/storybook/storyConstants';
-import { ref, computed } from 'vue';
+import { MOOD_TAGS_CATEGORIES } from '@/constants/storybook/storyConstants';
+import { ref } from 'vue';
 
 const props = defineProps({
   sectionData: Object, // 부모로부터 받은 섹션 데이터
@@ -139,12 +133,6 @@ const emit = defineEmits([
 
 const MAX_IMAGES = 5;
 const fileInput = ref(null);
-const isExpanded = ref(false);
-const limitCount = 10;
-const allMoodTags = MOOD_TAGS;
-const displayedTags = computed(() => {
-  return isExpanded.value ? allMoodTags : allMoodTags.slice(0, limitCount);
-});
 
 const triggerFileInput = () => fileInput.value.click();
 

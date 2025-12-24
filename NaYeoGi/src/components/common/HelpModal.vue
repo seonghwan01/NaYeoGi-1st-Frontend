@@ -7,7 +7,7 @@
       <ul class="help-list">
         <li>
           <div class="step-badge">STEP 1</div>
-          <strong>AI 여행지 추천</strong>
+          <strong>여행지 추천</strong>
           <p>내 취향에 딱 맞는 여행지들을 추천받고 나만의 여행 계획을 세워보세요.</p>
         </li>
         <li>
@@ -18,7 +18,7 @@
         <li>
           <div class="step-badge">STEP 3</div>
           <strong>AI 여행 기록</strong>
-          <p>다녀온 여행의 사진과 짧은 글을 올리면, AI가 여행에 딱 맞는 멋진 블로그를 자동으로 작성해줍니다.</p>
+          <p>다녀온 여행의 사진과 태그, 짧은 글을 올리면, AI가 여행에 딱 맞는 멋진 글을 자동으로 작성해줍니다.</p>
         </li>
       </ul>
       <div class="modal-footer">

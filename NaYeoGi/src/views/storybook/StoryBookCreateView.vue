@@ -2,11 +2,18 @@
   <div class="container py-5" style="max-width: 900px;">
     <ContentCard>
       <!-- 로딩 오버레이 (AI 생성 또는 최종 저장 시) -->
-      <div v-if="storybookStore.isLoading" class="loading-overlay">
-        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
-        <h4 class="mt-4 fw-bold">AI가 스토리를 만들고 있어요...</h4>
-        <p class="text-muted">잠시만 기다려주세요.</p>
-      </div>
+      <!-- Teleport를 사용하여 DOM 최상위로 이동시켜 CSS fixed가 뷰포트 기준으로 동작하게 함 -->
+      <Teleport to="body">
+        <transition name="fade">
+          <div v-if="storybookStore.isLoading" class="loading-overlay">
+            <div class="loading-content text-center p-5 rounded-4 shadow-lg">
+              <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+              <h4 class="mt-4 fw-bold text-dark">{{ currentLoadingMessage }}</h4>
+              <p class="text-muted mb-0">잠시만 기다려주세요.</p>
+            </div>
+          </div>
+        </transition>
+      </Teleport>
 
       <div class="text-center mb-5">
         <h1 class="fw-bold display-6 mb-2">✨ AI 여행 기록</h1>
@@ -38,11 +45,11 @@
             </div>
             <div class="mb-4">
               <div class="d-flex justify-content-between align-items-center mb-2">
-                <label class="form-label fw-bold text-dark mb-0">👥 누구와 함께했나요?</label>
+                <label class="form-label fw-bold text-dark mb-0">👥 누구와 함께했나요? <span class="text-primary small">(최대 3개)</span></label>
                 <span class="small text-muted" v-if="currentStory.companions.length > 0">{{ currentStory.companions.map(id => getLabel(COMPANIONS, id)).join(', ') }}</span>
               </div>
               <div class="d-flex flex-wrap gap-2">
-                <button v-for="c in COMPANIONS" :key="c.id" class="btn btn-sm rounded-pill px-3 py-2 transition-btn" :class="currentStory.companions.includes(c.id) ? 'btn-dark' : 'btn-outline-secondary border-0 bg-light text-secondary'" @click="toggleSelection(currentStory.companions, c.id)">{{ c.label }}</button>
+                <button v-for="c in COMPANIONS" :key="c.id" class="btn btn-sm rounded-pill px-3 py-2 transition-btn" :class="currentStory.companions.includes(c.id) ? 'btn-dark' : 'btn-outline-secondary border-0 bg-light text-secondary'" @click="toggleSelection(currentStory.companions, c.id, 3)">{{ c.icon }} {{ c.label }}</button>
               </div>
             </div>
             <div class="mb-2">
@@ -50,9 +57,20 @@
                 <label class="form-label fw-bold text-dark mb-0">🎨 전체적인 글 분위기 <span class="text-primary small">(최대 3개)</span></label>
                 <span class="small text-muted" v-if="currentStory.tones.length > 0">{{ currentStory.tones.map(id => getLabel(STORY_TONES, id)).join(', ') }}</span>
               </div>
-              <div class="d-flex flex-wrap gap-2">
-                <button v-for="t in displayedTones" :key="t.id" class="btn btn-sm rounded-pill px-3 py-2 d-flex align-items-center gap-2 transition-btn" :class="currentStory.tones.includes(t.id) ? 'btn-primary shadow-sm' : 'btn-outline-secondary border-0 bg-light text-secondary'" @click="toggleSelection(currentStory.tones, t.id, 3)"><span>{{ t.icon }}</span><span>{{ t.label }}</span></button>
-                <button v-if="STORY_TONES.length > limitCount" class="btn btn-sm btn-link text-decoration-none text-muted fw-bold" @click="isExpanded = !isExpanded">{{ isExpanded ? '접기 ▲' : '+ 더보기' }}</button>
+              
+              <div v-for="category in STORY_TONES_CATEGORIES" :key="category.label" class="mb-3">
+                <h6 class="fw-bold small text-muted mb-2 ps-1">{{ category.label }}</h6>
+                <div class="d-flex flex-wrap gap-2">
+                  <button 
+                    v-for="t in category.items" 
+                    :key="t.id" 
+                    class="btn btn-sm rounded-pill px-3 py-2 d-flex align-items-center gap-2 transition-btn" 
+                    :class="currentStory.tones.includes(t.id) ? 'btn-primary shadow-sm' : 'btn-outline-secondary border-0 bg-light text-secondary'" 
+                    @click="toggleSelection(currentStory.tones, t.id, 3)"
+                  >
+                    <span>{{ t.icon }}</span><span>{{ t.label }}</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -73,9 +91,11 @@
               </h4>
             </div>
             <div class="bg-light p-3 rounded border border-light-subtle">
-               <label class="form-label small text-muted fw-bold mb-2">⛅ Day {{ dayItem.dayNum }}의 날씨는 어땠나요?</label>
-               <div class="d-flex flex-wrap gap-2">
-                  <button v-for="w in WEATHER_TAGS" :key="w.id" class="btn btn-sm rounded-pill px-3 py-1 transition-btn" :class="dayItem.weather.includes(w.id) ? 'btn-warning text-dark border-warning' : 'btn-white border text-secondary'" @click="toggleSelection(dayItem.weather, w.id)">{{ w.icon }} {{ w.label }}</button>
+               <label class="form-label small text-muted fw-bold mb-2">⛅ Day {{ dayItem.dayNum }}의 날씨는 어땠나요? <span class="text-warning-emphasis">(최대 3개)</span></label>
+               <div v-for="cat in WEATHER_TAGS_CATEGORIES" :key="cat.label" class="mb-2">
+                  <div class="d-flex flex-wrap gap-2">
+                      <button v-for="w in cat.items" :key="w.id" class="btn btn-sm rounded-pill px-3 py-1 transition-btn" :class="dayItem.weather.includes(w.id) ? 'btn-warning text-dark border-warning' : 'btn-white border text-secondary'" @click="toggleSelection(dayItem.weather, w.id, 3)">{{ w.icon }} {{ w.label }}</button>
+                  </div>
                </div>
             </div>
           </div>
@@ -144,14 +164,16 @@
         <p class="text-muted small">이전 페이지로 돌아가 다시 시도해주세요.</p>
       </div>
 
-      <!-- 하단 고정 버튼 -->
-      <div class="fixed-bottom bg-white border-top py-3 shadow-lg" style="z-index: 900;">
-        <div class="container" style="max-width: 900px;">
-          <div class="d-flex justify-content-end gap-2">
-            <button class="btn btn-light border px-4" @click="saveTemp">임시 저장</button>
-            <button class="btn btn-primary px-4 fw-bold shadow-sm" @click="generateStory">AI 스토리 생성</button>
-          </div>
-        </div>
+      <!-- 하단 고정 버튼 (플로팅 액션 버튼 스타일) -->
+      <div class="fixed-bottom d-flex justify-content-center pb-5" style="z-index: 900; pointer-events: none;">
+        <button 
+          class="btn btn-lg rounded-pill px-5 py-3 shadow-lg ai-generate-btn d-flex align-items-center gap-2"
+          @click="generateStory"
+          style="pointer-events: auto;"
+        >
+          <span class="fs-4">✨</span>
+          <span class="fw-bold fs-5">스토리 생성하기</span>
+        </button>
       </div>
       <div style="height: 80px;"></div>
       <div v-if="modalImage" class="image-modal-overlay" @click="closeImageModal">
@@ -162,7 +184,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, toRef } from 'vue';
+import { ref, computed, onMounted, onUnmounted, toRef, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import StorySection from '@/components/storybook/StorySection.vue';
 import ContentCard from '@/components/common/ContentCard.vue';
@@ -171,7 +193,9 @@ import { usePlanStore } from '@/stores/plan';
 import { useDraggable } from '@/composables/useDraggable';
 import {
   WEATHER_TAGS,
+  WEATHER_TAGS_CATEGORIES,
   STORY_TONES,
+  STORY_TONES_CATEGORIES,
   COMPANIONS,
 } from '@/constants/storybook/storyConstants';
 
@@ -189,8 +213,27 @@ const { currentStory } = storeToRefs(storybookStore);
 
 // --- UI 전용 상태 변수 ---
 const modalImage = ref(null);
-const isExpanded = ref(false);
-const limitCount = 8;
+const loadingMessages = [
+  "여행의 추억을 정리하고 있어요...",
+  "사진 속 숨겨진 이야기를 찾고 있어요...",
+  "멋진 여행기가 곧 완성됩니다!"
+];
+const currentLoadingMessage = ref(loadingMessages[0]);
+let loadingInterval = null;
+
+// --- 로딩 메시지 순환 로직 ---
+watch(() => storybookStore.isLoading, (newValue) => {
+  if (newValue) {
+    let index = 0;
+    currentLoadingMessage.value = loadingMessages[0];
+    loadingInterval = setInterval(() => {
+      index = (index + 1) % loadingMessages.length;
+      currentLoadingMessage.value = loadingMessages[index];
+    }, 3000);
+  } else {
+    if (loadingInterval) clearInterval(loadingInterval);
+  }
+});
 
 // --- 드래그 앤 드롭 로직 ---
 const storyDaysRef = toRef(currentStory.value, 'storyDays');
@@ -219,7 +262,6 @@ const durationLabel = computed(() => {
   return `${diffDays}박 ${diffDays + 1}일`;
 });
 const seasonLabel = computed(() => '가을'); // 간략화
-const displayedTones = computed(() => isExpanded.value ? STORY_TONES : STORY_TONES.slice(0, limitCount));
 
 // --- 이미지 핸들러 ---
 const handleImageUpload = (dayIndex, sectionIndex, files) => {
@@ -286,6 +328,10 @@ onMounted(async () => {
     }
   }
 });
+
+onUnmounted(() => {
+  if (loadingInterval) clearInterval(loadingInterval);
+});
 </script>
 
 <style lang="css" scoped>
@@ -329,15 +375,47 @@ onMounted(async () => {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(255, 255, 255, 0.9);
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5); /* 더 부드러운 반투명 검정 */
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   z-index: 9999;
-  backdrop-filter: blur(5px);
+  backdrop-filter: blur(8px); /* 블러 효과 강화 */
+}
+
+/* 로딩 컨텐츠 (작은 창) 스타일 */
+.loading-content {
+  background-color: white;
+  min-width: 320px;
+  max-width: 90%;
+  border-radius: 1.5rem; /* 둥근 모서리 */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); /* 띄워진 느낌의 그림자 */
+  animation: floatUp 0.4s ease-out; /* 등장 애니메이션 */
+}
+
+@keyframes floatUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 페이드 트랜지션 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 /* 유틸 */
