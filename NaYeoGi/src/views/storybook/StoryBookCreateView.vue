@@ -6,11 +6,9 @@
       <Teleport to="body">
         <transition name="fade">
           <div v-if="storybookStore.isLoading" class="loading-overlay">
-            <div class="loading-content text-center p-5 rounded-4 shadow-lg">
               <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
               <h4 class="mt-4 fw-bold text-dark">{{ currentLoadingMessage }}</h4>
               <p class="text-muted mb-0">잠시만 기다려주세요.</p>
-            </div>
           </div>
         </transition>
       </Teleport>
@@ -378,13 +376,13 @@ onUnmounted(() => {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5); /* 더 부드러운 반투명 검정 */
+  background-color: rgba(252, 249, 249, 0.808); /* 더 부드러운 반투명 검정 */
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   z-index: 9999;
-  backdrop-filter: blur(8px); /* 블러 효과 강화 */
+  backdrop-filter: blur(1px); /* 블러 효과 강화 */
 }
 
 /* 로딩 컨텐츠 (작은 창) 스타일 */

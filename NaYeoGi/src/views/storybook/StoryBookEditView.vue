@@ -32,7 +32,7 @@ onMounted(async () => {
       editorInstance = new Editor({
         el: editorRef.value,
         height: '700px', // 높이를 더 시원하게 확장
-        initialEditType: 'markdown',
+        initialEditType: 'wysiwyg',
         previewStyle: 'vertical',
         initialValue: draft.value.content,
         usageStatistics: false,
