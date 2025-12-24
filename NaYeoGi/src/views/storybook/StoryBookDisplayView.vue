@@ -261,7 +261,7 @@ const onTogglePublic = async () => {
 
 /* 2개일 때: 화살표 없이 가로 나열 */
 .simple-gallery.dual { display: flex; justify-content: center; gap: 1.5rem; margin: 2.5rem 0; }
-.gallery-image { width: 45%; max-height: 350px; object-fit: contain; background-color: rgba(0,0,0,0.03); border-radius: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.1); cursor: zoom-in; }
+.gallery-image {width: 48%; max-height: 350px; object-fit: cover; object-position: center 30%; background-color: transparent; border-radius: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.1); cursor: zoom-in; }
 
 .single-image-wrapper { text-align: center; margin: 2.5rem 0; }
 .single-image { display: inline-block; max-width: 90%; max-height: 500px; height: auto; border-radius: 1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1); cursor: zoom-in; }
