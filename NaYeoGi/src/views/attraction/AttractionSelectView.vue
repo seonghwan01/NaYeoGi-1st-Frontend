@@ -157,7 +157,7 @@ const {
 const mapContainer = ref(null)
 const mapInstance = ref(null)
 const markers = ref([])
-const markerImages = ref({ default: null, selected: null })
+const markerImages = ref({ default: null, selected: null, picked: null })
 const cardRefs = ref({})
 const cardListRef = ref(null)
 
@@ -187,10 +187,11 @@ const createMarkerImage = (kakao, fillColor) => {
 }
 
 const initMarkerImages = (kakao) => {
-  if (markerImages.value.default && markerImages.value.selected) return
+  if (markerImages.value.default && markerImages.value.selected && markerImages.value.picked) return
   markerImages.value = {
     default: createMarkerImage(kakao, '#3b82f6'),
-    selected: createMarkerImage(kakao, '#ef4444')
+    selected: createMarkerImage(kakao, '#f59e0b'),
+    picked: createMarkerImage(kakao, '#ef4444')
   }
 }
 
@@ -219,12 +220,19 @@ const renderAllMarkers = (kakao) => {
     return
   }
   setSelectedId(null)
+  updateMarkerSelection(selectedId.value)
 }
 
 const updateMarkerSelection = (id) => {
-  if (!markerImages.value.default || !markerImages.value.selected) return
+  if (!markerImages.value.default || !markerImages.value.selected || !markerImages.value.picked) return
+  const pickedIds = new Set(selectedAttractions.value.map((item) => item.id))
   markers.value.forEach(({ id: markerId, marker }) => {
-    const image = markerId === id ? markerImages.value.selected : markerImages.value.default
+    let image = markerImages.value.default
+    if (markerId === id) {
+      image = markerImages.value.selected
+    } else if (pickedIds.has(markerId)) {
+      image = markerImages.value.picked
+    }
     marker.setImage(image)
   })
 }
@@ -321,6 +329,10 @@ watch(
   },
   { flush: 'post' }
 )
+
+watch(selectedAttractions, () => {
+  updateMarkerSelection(selectedId.value)
+})
 
 onMounted(async () => {
   if (recommendations.value.length === 0) {

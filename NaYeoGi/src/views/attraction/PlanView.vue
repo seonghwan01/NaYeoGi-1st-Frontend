@@ -116,6 +116,7 @@
                     <div class="drag-top">
                       <span class="order-badge">{{ itemIndex + 1 }}</span>
                       <div class="name">{{ item.title }}</div>
+                      <span class="selected-badge">{{ resolveCategoryLabel(item.content_type_id) }}</span>
                     </div>
                     <div class="muted">{{ item.addr1 }}</div>
                   </div>
@@ -141,6 +142,7 @@ import { requestCreatePlan } from '@/restapi/plan'
 const router = useRouter()
 const attractionStore = useAttractionStore()
 const { selectedAttractions } = storeToRefs(attractionStore)
+const { resolveCategoryLabel } = attractionStore
 
 const form = reactive({
   title: '',
@@ -585,7 +587,7 @@ const submitPlan = async () => {
       attractionId: plannedAttractions.value.map((item) => item.id),
       planDetails
     })
-    router.push({ name: 'main' })
+    router.push({ name: 'my-plans' })
   } catch (error) {
     console.error(error)
     errorMessage.value = error?.message ?? '계획 저장에 실패했습니다.'
@@ -940,6 +942,17 @@ onBeforeUnmount(() => {
   border: 1px solid var(--badge-border, #4338ca);
   font-weight: 800;
   box-shadow: 0 4px 10px var(--badge-shadow, rgba(67, 56, 202, 0.25));
+}
+
+.selected-badge {
+  margin-left: auto;
+  background: #eef2ff;
+  color: #4338ca;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .name {
