@@ -124,10 +124,6 @@ const deleteMember = async () => {
   <div
     class="min-vh-100 w-100 position-relative d-flex align-items-center justify-content-center text-white"
   >
-    <div
-      class="position-absolute top-0 start-0 w-100 h-100"
-      style="background-color: rgba(0, 0, 0, 0.6)"
-    ></div>
 
     <div class="position-relative container animate-fade-in-up" style="max-width: 600px;">
       <div class="library-card p-5 rounded-4 h-100">
