@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 // API 통신을 담당할 파일을 임포트합니다.
 import { uploadImagesApi, deleteImageApi } from "@/restapi/image";
 import { generateAiStoryApi, saveStoryApi, getStoryById, getMyStories, deleteStoryApi, updateStoryVisibilityApi, updateStoryApi } from "@/restapi/storybook";
+import { CATEGORY_LABELS } from '@/stores/attractions';
 import {
   COMPANIONS,
   STORY_TONES,
@@ -149,6 +150,8 @@ import {
                 allDays[dayIndex].sections.push({
                     id: detail.attraction.id,
                     placeName: detail.attraction.title,
+                    contentTypeId: detail.attraction.contentTypeId,
+                    address: detail.attraction.address,
                     visitOrder: detail.sequence,
                     weather: "",
                     atmosphere: "",
@@ -209,12 +212,22 @@ import {
         }
 
         day.sections.forEach(section => {
-          delete section.id;
-          if (section.atmosphere === "") delete section.atmosphere;
-          // Note: section.weather is likely unused, but we keep the logic just in case
-          if (section.weather === "") delete section.weather;
+          // AI에게 전달할 추가 정보 가공
+          if (section.contentTypeId) {
+            section.category = CATEGORY_LABELS[section.contentTypeId] || '기타';
+          }
+          if (section.address) {
+            // "강원도 강릉시 ..." -> "강원도 강릉시" 정도로 축약
+            const parts = section.address.split(" ");
+            section.location = parts.length > 1 ? `${parts[0]} ${parts[1]}` : parts[0];
+          }
           
-          // MOOD_TAGS are stored as strings (labels) in selectedTags, so they are already clean text.
+          delete section.id;
+          delete section.contentTypeId; // 가공 후 원본 ID 제거
+          delete section.address;
+
+          if (section.atmosphere === "") delete section.atmosphere;
+          if (section.weather === "") delete section.weather;
         });
       });
 

@@ -26,7 +26,7 @@ const DEFAULT_REGIONS = [
   '제주도'
 ]
 
-const CATEGORY_LABELS = {
+export const CATEGORY_LABELS = {
   12: '관광지',
   39: '식당',
   14: '문화시설',

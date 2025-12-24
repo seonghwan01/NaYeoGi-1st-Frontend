@@ -30,7 +30,7 @@
           <div class="card-body p-4 bg-white rounded">
             <!-- (기존 UI 동일) -->
             <div class="mb-4">
-              <label class="form-label fw-bold text-dark">🏷️ 여행 제목</label>
+              <label class="form-label fw-bold text-dark">🏷️ 여행 제목 <span class="text-danger">*</span></label>
               <input type="text" class="form-control form-control-lg bg-light border-0" v-model="currentStory.storyTitle" placeholder="예: 3대가 함께한 우당탕탕 제주 여행">
             </div>
             <div class="mb-4">
@@ -43,7 +43,7 @@
             </div>
             <div class="mb-4">
               <div class="d-flex justify-content-between align-items-center mb-2">
-                <label class="form-label fw-bold text-dark mb-0">👥 누구와 함께했나요? <span class="text-primary small">(최대 3개)</span></label>
+                <label class="form-label fw-bold text-dark mb-0">👥 누구와 함께했나요? <span class="text-danger">*</span> <span class="text-primary small">(최대 3개)</span></label>
                 <span class="small text-muted" v-if="currentStory.companions.length > 0">{{ currentStory.companions.map(id => getLabel(COMPANIONS, id)).join(', ') }}</span>
               </div>
               <div class="d-flex flex-wrap gap-2">
@@ -52,7 +52,7 @@
             </div>
             <div class="mb-2">
               <div class="d-flex justify-content-between align-items-center mb-2">
-                <label class="form-label fw-bold text-dark mb-0">🎨 전체적인 글 분위기 <span class="text-primary small">(최대 3개)</span></label>
+                <label class="form-label fw-bold text-dark mb-0">🎨 전체적인 글 분위기 <span class="text-danger">*</span> <span class="text-primary small">(최대 3개)</span></label>
                 <span class="small text-muted" v-if="currentStory.tones.length > 0">{{ currentStory.tones.map(id => getLabel(STORY_TONES, id)).join(', ') }}</span>
               </div>
               
@@ -302,6 +302,12 @@ const saveTemp = () => alert('임시 저장 기능은 구현 예정입니다.');
 const generateStory = async () => {
   if (!currentStory.value.storyTitle) {
     return alert('여행 제목을 입력해주세요!');
+  }
+  if (!currentStory.value.companions || currentStory.value.companions.length === 0) {
+    return alert('누구와 함께했는지 선택해주세요!');
+  }
+  if (!currentStory.value.tones || currentStory.value.tones.length === 0) {
+    return alert('글의 분위기를 선택해주세요!');
   }
   await storybookStore.generateStoryDraft();
 };

@@ -190,6 +190,16 @@ const onTogglePublic = async () => {
              <span class="text-muted small ms-2"><i class="bi bi-eye me-1"></i>{{ story.hit }}</span>
           </div>
           <h1 class="display-5 fw-bold mb-3 text-dark">{{ story.title }}</h1>
+          
+          <div class="d-flex justify-content-center flex-wrap gap-2 mb-3">
+            <span v-if="story.companions" class="badge bg-light text-dark border rounded-pill px-3 py-2">
+              👥 {{ Array.isArray(story.companions) ? story.companions.join(', ') : story.companions }}
+            </span>
+            <span v-if="story.tones" class="badge bg-light text-dark border rounded-pill px-3 py-2">
+              🎨 {{ Array.isArray(story.tones) ? story.tones.join(', ') : story.tones }}
+            </span>
+          </div>
+
           <p class="text-muted">
             <span class="fw-bold text-dark">{{ story.writerName }}</span> · {{ story.createdDate }}
           </p>
