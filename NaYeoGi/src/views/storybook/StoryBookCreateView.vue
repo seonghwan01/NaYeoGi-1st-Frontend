@@ -164,22 +164,23 @@
         <p class="text-muted small">이전 페이지로 돌아가 다시 시도해주세요.</p>
       </div>
 
-      <!-- 하단 고정 버튼 (플로팅 액션 버튼 스타일) -->
-      <div class="fixed-bottom d-flex justify-content-center pb-5" style="z-index: 900; pointer-events: none;">
-        <button 
-          class="btn btn-lg rounded-pill px-5 py-3 shadow-lg ai-generate-btn d-flex align-items-center gap-2"
-          @click="generateStory"
-          style="pointer-events: auto;"
-        >
-          <span class="fs-4">✨</span>
-          <span class="fw-bold fs-5">스토리 생성하기</span>
-        </button>
-      </div>
       <div style="height: 80px;"></div>
       <div v-if="modalImage" class="image-modal-overlay" @click="closeImageModal">
         <div class="image-modal-content"><img :src="modalImage" class="img-fluid rounded shadow"></div>
       </div>
     </ContentCard>
+
+    <!-- 하단 고정 버튼 (Viewport 기준 고정) -->
+    <div class="fixed-bottom d-flex justify-content-center pb-5" style="z-index: 1050; pointer-events: none;">
+      <button 
+        class="btn btn-primary btn-lg rounded-pill px-5 py-3 shadow-lg ai-generate-btn d-flex align-items-center gap-2"
+        @click="generateStory"
+        style="pointer-events: auto; border: none; font-weight: 600;"
+      >
+        <span>✨</span>
+        <span>스토리 생성하기</span>
+      </button>
+    </div>
   </div>
 </template>
 
@@ -261,7 +262,7 @@ const durationLabel = computed(() => {
   const diffDays = Math.ceil(Math.abs(e - s) / (1000 * 60 * 60 * 24));
   return `${diffDays}박 ${diffDays + 1}일`;
 });
-const seasonLabel = computed(() => '가을'); // 간략화
+const seasonLabel = computed(() => storybookStore.calculateSeason(currentStory.value.startDate));
 
 // --- 이미지 핸들러 ---
 const handleImageUpload = (dayIndex, sectionIndex, files) => {
@@ -424,4 +425,22 @@ onUnmounted(() => {
 .transition-btn { transition: all 0.2s ease; }
 .image-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; display: flex; justify-content: center; align-items: center; }
 .image-modal-content img { max-width: 90vw; max-height: 90vh; }
+
+.ai-generate-btn {
+  background: linear-gradient(135deg, #f2f2f5 0%, #eee9f3 100%);
+  color: rgb(117, 114, 114);
+  border: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ai-generate-btn:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 15px 30px rgba(219, 219, 240, 0.4) !important;
+  color: white;
+  background: linear-gradient(135deg, #eeedf5 0%, #efe8f5 100%);
+}
+
+.ai-generate-btn:active {
+  transform: translateY(0) scale(0.98);
+}
 </style>

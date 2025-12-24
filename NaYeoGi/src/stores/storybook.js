@@ -338,5 +338,6 @@ import {
     updateStoryVisibility,
     setStoryForEditing,
     updateStory,
+    calculateSeason,
   };
 });
